@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>열평형 실험 보고서</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+:root{
+  --bg:#181128; --bg2:#221833; --card:#291E3D; --card2:#31254A; --line:#443463;
+  --ink:#F1ECF9; --muted:#A99CC4;
+  --hot:#FF7A45; --hot-soft:#3A2130; --cold:#59A8FF; --cold-soft:#1E2A45;
+  --warn:#FF6B87; --warn-soft:#3A1F2C; --ok:#46D6A0; --ok-soft:#16352E;
+  --hint:#FFC861; --hint-soft:#372B1E; --gold:#E8B84B; --r:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);
+  font-family:"Pretendard Variable",Pretendard,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  font-size:16px;line-height:1.55;-webkit-text-size-adjust:100%;font-variant-numeric:tabular-nums}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px 64px}
+
+/* ---------- 인트로 ---------- */
+#s-intro{display:block;position:fixed;inset:0;z-index:50;background:var(--bg);overflow:hidden}
+#s-intro.off{display:none}
+#pcanvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.introInner{position:relative;z-index:2;height:100%;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;padding:28px;gap:18px}
+.introInner h1{margin:0;font-size:clamp(28px,5.4vw,48px);font-weight:800;letter-spacing:-.035em;line-height:1.2}
+.introInner h1 .glow{color:#fff;text-shadow:0 0 24px rgba(255,140,80,.55),0 0 60px rgba(90,160,255,.35)}
+.introInner p{margin:0;max-width:38rem;font-size:clamp(14.5px,2.1vw,17px);color:#D8CFEA;line-height:1.75}
+.introInner .care{color:var(--hot);font-weight:700}
+.startBtn{margin-top:10px;font-size:20px;font-weight:800;letter-spacing:.02em;
+  padding:15px 46px;border-radius:999px;border:2px solid var(--gold);color:#1A1226;
+  background:linear-gradient(135deg,#FFD37A,#FF9F53);cursor:pointer;
+  box-shadow:0 0 0 0 rgba(255,190,100,.55);animation:pulse 2.4s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,190,100,.45)}70%{box-shadow:0 0 0 20px rgba(255,190,100,0)}100%{box-shadow:0 0 0 0 rgba(255,190,100,0)}}
+
+/* ---------- 헤더 ---------- */
+header.top{background:var(--bg2);border-bottom:1px solid var(--line)}
+.topbar{max-width:1080px;margin:0 auto;padding:18px 20px 0}
+.brand{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.brand h1{font-size:22px;font-weight:800;letter-spacing:-.02em;margin:0}
+.brand .sub{color:var(--muted);font-size:14px}
+.who{margin-left:auto;font-size:14px;font-weight:700;color:var(--gold)}
+.thermostrip{height:5px;margin:14px 0 0;border-radius:3px 3px 0 0;
+  background:linear-gradient(90deg,var(--hot) 0%,#B07A8E 46%,#6E86C8 60%,var(--cold) 100%)}
+.rail{max-width:1080px;margin:0 auto;padding:10px 20px 12px;display:flex;gap:6px;flex-wrap:wrap}
+.rail span{font-size:12.5px;color:var(--muted);padding:3px 10px;border-radius:999px;border:1px solid transparent}
+.rail span.on{color:#1A1226;background:var(--gold);font-weight:800}
+.rail span.done{color:var(--ok);border-color:#2E6A57;background:var(--ok-soft)}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:26px;margin-top:22px}
+.card h2{margin:0 0 6px;font-size:20px;font-weight:800;letter-spacing:-.02em}
+.card p.lead{margin:0 0 20px;color:var(--muted);font-size:14.5px}
+.screen{display:none}
+.screen.on{display:block}
+
+label.f{display:block;font-size:13.5px;font-weight:700;color:#CFC3E6;margin-bottom:6px}
+select,input,textarea{font:inherit;color:var(--ink);background:#1F1730;border:1.5px solid var(--line);
+  border-radius:10px;padding:10px 12px;width:100%}
+textarea{resize:vertical;min-height:60px;line-height:1.5}
+select:focus-visible,input:focus-visible,textarea:focus-visible,button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+input::placeholder,textarea::placeholder{color:#7C6E96}
+button{font:inherit;font-weight:700;cursor:pointer;border-radius:10px;border:1.5px solid var(--gold);
+  background:var(--gold);color:#1A1226;padding:11px 22px}
+button.ghost{background:transparent;color:#D8CFEA;border-color:var(--line)}
+button.small{padding:7px 14px;font-size:14px;border-radius:8px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px;align-items:center}
+
+.pickers{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:420px}
+.confirm-big{font-size:44px;font-weight:800;letter-spacing:-.03em;text-align:center;
+  padding:28px 10px;border:2px dashed var(--line);border-radius:var(--r);color:var(--gold)}
+.confirm-q{text-align:center;margin:16px 0 0;font-size:16px;font-weight:600}
+
+/* ---------- 역할 ---------- */
+.roles{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.role{border:1.5px solid var(--line);border-radius:12px;padding:16px;background:var(--card2)}
+.role .top{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.role .av{width:64px;height:64px;flex:0 0 64px;border-radius:12px;background:#1F1730;border:1px solid var(--line)}
+.role .nm{font-size:17px;font-weight:800}
+.role .job{font-size:13px;color:var(--muted);margin:2px 0 0}
+.role .row{display:grid;grid-template-columns:96px 1fr;gap:8px}
+.role.r-min{border-color:#5B4C7E}   .role.r-min .nm{color:#C6B4F5}
+.role.r-hot{border-color:#7A462F}   .role.r-hot .nm{color:var(--hot)}
+.role.r-cold{border-color:#2F4E7A}  .role.r-cold .nm{color:var(--cold)}
+.role.r-rec{border-color:#2A6553}   .role.r-rec .nm{color:var(--ok)}
+
+/* ---------- 표 ---------- */
+.tscroll{overflow-x:auto;padding-bottom:4px}
+table{border-collapse:collapse;width:100%;min-width:720px}
+th,td{border:1px solid var(--line);padding:7px 4px;text-align:center;font-size:14px}
+th{background:#2F2447;font-weight:700}
+th.rowh{width:126px;text-align:left;padding-left:12px}
+tr.hotrow th.rowh{color:var(--hot);background:var(--hot-soft)}
+tr.coldrow th.rowh{color:var(--cold);background:var(--cold-soft)}
+tr.hotrow td{background:#2C2038}
+tr.coldrow td{background:#232338}
+td input{text-align:center;padding:6px 2px;border-radius:7px;border-width:1px;font-size:14px}
+.readonly td{font-weight:600}
+.mini{min-width:660px}
+.mini td.dim{color:#6E6188}
+tr.hl-hot td.on{outline:2px solid var(--hot);outline-offset:-2px;font-weight:800;color:#FFCDB6}
+tr.hl-cold td.on{outline:2px solid var(--cold);outline-offset:-2px;font-weight:800;color:#C4DEFF}
+
+/* ---------- 그래프 ---------- */
+.graphlayout{display:grid;grid-template-columns:minmax(0,1fr) 268px;gap:20px;align-items:start}
+.plotwrap{position:relative;background:#1E1731;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+svg.plot{display:block;width:100%;height:auto;touch-action:none}
+.gridline{stroke:#382B52;stroke-width:1}
+.axis{stroke:#7E6FA3;stroke-width:1.5}
+.axlabel{fill:#A99CC4;font-size:12px}
+.axtitle{fill:#E7DFF7;font-size:13px;font-weight:700}
+.pt{stroke:#1E1731;stroke-width:2}
+.pt-hot{fill:var(--hot)} .pt-cold{fill:var(--cold)} .pt-bad{fill:var(--warn)}
+.badring{fill:none;stroke:var(--warn);stroke-width:2;stroke-dasharray:3 3}
+.curve{fill:none;stroke-width:3;stroke-linecap:round}
+.curve-hot{stroke:var(--hot)} .curve-cold{stroke:var(--cold)}
+.leader{stroke:#9A8CBF;stroke-width:1.5;stroke-dasharray:4 4}
+.hint-cross{stroke:#5F4F84;stroke-width:1;stroke-dasharray:3 3}
+
+.panel{position:sticky;top:14px;display:flex;flex-direction:column;gap:14px}
+.step{border:1.5px solid var(--line);border-radius:12px;padding:14px;background:var(--card2)}
+.step h3{margin:0 0 6px;font-size:15px;font-weight:800}
+.step p{margin:0;font-size:13.5px;color:var(--muted)}
+.count{font-size:26px;font-weight:800}
+.count small{font-size:14px;font-weight:600;color:var(--muted)}
+
+.msg{border-radius:10px;padding:12px 14px;font-size:14px;font-weight:600;display:none;margin-top:10px}
+.msg.on{display:block}
+.msg.warn{background:var(--warn-soft);color:var(--warn);border:1.5px solid #7A3550}
+.msg.ok{background:var(--ok-soft);color:var(--ok);border:1.5px solid #2E6A57}
+.msg.hint{background:var(--hint-soft);color:var(--hint);border:1.5px solid #6E5730}
+.shake{animation:shake .38s}
+@keyframes shake{0%,100%{transform:translateX(0)}22%{transform:translateX(-6px)}55%{transform:translateX(5px)}80%{transform:translateX(-3px)}}
+
+.tray{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
+.tag{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:999px;
+  font-size:14px;font-weight:800;border:2px solid;background:#1F1730;cursor:grab;user-select:none;touch-action:none}
+.tag.t-hot{color:var(--hot);border-color:var(--hot)}
+.tag.t-cold{color:var(--cold);border-color:var(--cold)}
+.tag .dot{width:9px;height:9px;border-radius:50%;background:currentColor}
+.tag.placed{position:absolute;cursor:default;box-shadow:0 2px 10px rgba(0,0,0,.5);z-index:3}
+.tag.dragging{position:fixed;z-index:99;cursor:grabbing;box-shadow:0 8px 22px rgba(0,0,0,.6);pointer-events:none}
+.tag.used{display:none}
+
+/* ---------- 문제 ---------- */
+.q{border:1.5px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px;background:var(--card2)}
+.q.right{border-color:#2E6A57;background:var(--ok-soft)}
+.q .qh{display:flex;gap:10px;align-items:baseline;margin-bottom:4px}
+.qnum{font-size:13px;font-weight:800;color:#1A1226;background:var(--gold);border-radius:6px;padding:1px 8px}
+.qtype{font-size:12.5px;color:var(--muted);font-weight:700}
+.qtext{font-size:16px;font-weight:700;margin:0 0 12px}
+.qhint{font-size:13.5px;color:var(--hint);background:var(--hint-soft);border-radius:8px;padding:8px 12px;
+  display:inline-block;margin-bottom:12px;font-weight:600}
+.subq{margin-bottom:10px}
+
+/* ---------- 명예의 전당 ---------- */
+.hall{border:3px solid var(--gold);border-radius:18px;padding:26px;text-align:center;margin:6px 0 20px;
+  background:radial-gradient(120% 90% at 50% 0%,#3B2B4F 0%,#241A36 60%,#1C1429 100%);
+  box-shadow:0 0 40px rgba(232,184,75,.18) inset}
+.hall .crown{font-size:44px;line-height:1}
+.hall .ttl{font-size:32px;font-weight:800;letter-spacing:-.03em;margin:6px 0 2px;color:var(--gold)}
+.hall .sub{font-size:14px;color:var(--muted);margin-bottom:16px}
+.hall .members{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.hall .m{border:1.5px solid var(--line);background:#1F1730;border-radius:10px;padding:8px 12px;font-size:14px;font-weight:700}
+.hall .m small{display:block;font-size:11.5px;color:var(--muted);font-weight:700}
+.hall .show{font-size:16px;font-weight:800;color:var(--hot);margin-top:10px}
+.hall .stamp{font-size:12.5px;color:var(--muted);margin-top:10px}
+
+.summary{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:20px}
+.sumitem{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--card2)}
+.sumitem .k{font-size:12.5px;color:var(--muted);font-weight:700}
+.sumitem .v{font-size:15.5px;font-weight:700}
+
+@media (max-width:860px){
+  .graphlayout{grid-template-columns:1fr}
+  .panel{position:static}
+  .roles,.pickers,.summary{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media print{
+  header.top .rail,.actions,.tray,.step,.msg{display:none!important}
+  body{background:#fff;color:#111}
+  .card{border:none;padding:0;margin-top:14px;background:#fff}
+  .graphlayout{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== 인트로 ===== -->
+<section id="s-intro">
+  <canvas id="pcanvas"></canvas>
+  <div class="introInner">
+    <h1><span class="glow">오늘 열평형 실험을 해봅시다</span></h1>
+    <p><span class="care">뜨거운 물에 데지 않게 주의하세요.</span><br>
+       각 물의 온도 변화를 제 시간에 정확히 측정하여, 열평형에 이르는 과정을 기록해 봅시다.</p>
+    <button class="startBtn" id="btnStart">시작!</button>
+  </div>
+</section>
+
+<header class="top" id="topHeader" style="display:none">
+  <div class="topbar">
+    <div class="brand">
+      <h1>열평형 실험 보고서</h1>
+      <span class="sub">뜨거운 물과 찬물이 만나면 온도는 어떻게 될까?</span>
+      <span class="who" id="who"></span>
+    </div>
+    <div class="thermostrip"></div>
+  </div>
+  <nav class="rail" id="rail"></nav>
+</header>
+
+<div class="wrap">
+
+<section class="screen card" id="s-login">
+  <h2>우리 반과 모둠을 고르세요</h2>
+  <p class="lead">모둠에서 한 대의 크롬북으로만 기록합니다. 기록왕이 입력해 주세요.</p>
+  <div class="pickers">
+    <div><label class="f" for="selClass">반</label><select id="selClass"></select></div>
+    <div><label class="f" for="selGroup">모둠</label><select id="selGroup"></select></div>
+  </div>
+  <div class="actions"><button id="btnLogin">다음</button></div>
+</section>
+
+<section class="screen card" id="s-confirm">
+  <h2>이 모둠이 맞나요?</h2>
+  <p class="lead">잘못 고르면 다른 모둠 기록과 섞일 수 있어요. 한 번 더 확인해 주세요.</p>
+  <div class="confirm-big" id="confirmBig">1반 1모둠</div>
+  <p class="confirm-q" id="confirmQ">정말 1반 1모둠이 맞나요?</p>
+  <div class="actions">
+    <button id="btnYes">네, 맞아요</button>
+    <button class="ghost" id="btnNo">아니요, 다시 고를래요</button>
+  </div>
+</section>
+
+<section class="screen card" id="s-roles">
+  <h2>모둠 역할을 정하고 이름을 쓰세요</h2>
+  <p class="lead">네 사람 모두 학번과 이름을 적어야 다음으로 넘어갑니다.</p>
+  <div class="roles" id="rolesBox"></div>
+  <div class="msg warn" id="rolesMsg"></div>
+  <div class="actions">
+    <button id="btnRoles">다음</button>
+    <button class="ghost" id="btnBackLogin">반·모둠 다시 고르기</button>
+  </div>
+</section>
+
+<section class="screen card" id="s-record">
+  <h2>온도를 기록하세요</h2>
+  <p class="lead">먼저 0분(처음 온도)을 적고, 1분이가 시간을 알려 줄 때마다 9분까지 이어서 적습니다. 단위는 섭씨(°C)입니다.</p>
+  <div class="tscroll"><table id="tblInput"></table></div>
+  <div class="msg warn" id="recMsg"></div>
+  <div class="actions">
+    <button id="btnRecord">그래프 그리러 가기</button>
+    <button class="ghost" id="btnBackRoles">역할 고치기</button>
+  </div>
+</section>
+
+<section class="screen card" id="s-graph">
+  <h2 id="gTitle">뜨거운 물 온도를 점으로 찍으세요</h2>
+  <p class="lead" id="gLead">가로축은 시간, 세로축은 온도입니다.</p>
+  <div class="graphlayout">
+    <div>
+      <div class="plotwrap" id="plotwrap">
+        <svg class="plot" id="svg" viewBox="0 0 660 470" role="img" aria-label="시간에 따른 온도 그래프"></svg>
+      </div>
+      <div class="tscroll" style="margin-top:12px"><table class="mini" id="miniTbl"></table></div>
+    </div>
+    <div class="panel">
+      <div class="step">
+        <h3 id="stepTitle">1단계 · 뜨거운 물</h3>
+        <p id="stepText">표를 보고 점을 찍으세요. 가까이 찍으면 정확한 자리에 붙습니다.</p>
+        <div class="count" style="margin-top:8px"><span id="cnt">0</span><small> / 10개</small></div>
+      </div>
+      <div class="msg warn" id="gWarn"></div>
+      <div class="msg ok" id="gOk"></div>
+      <div id="trayBox" style="display:none">
+        <div class="step">
+          <h3>3단계 · 이름표 붙이기</h3>
+          <p>아래 이름표를 끌어서 알맞은 곡선 위에 놓으세요.</p>
+          <div class="tray" id="tray">
+            <span class="tag t-hot" data-kind="hot"><span class="dot"></span>뜨거운 물</span>
+            <span class="tag t-cold" data-kind="cold"><span class="dot"></span>찬물</span>
+          </div>
+        </div>
+      </div>
+      <div class="actions" style="margin-top:0">
+        <button id="btnCheck">점 확인하기</button>
+        <button class="ghost small" id="btnClear">점 지우기</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="screen card" id="s-quiz">
+  <h2>표와 그래프를 보고 답하세요</h2>
+  <p class="lead">네 문제를 모두 맞히면 명예의 전당 카드가 열립니다. 세 번 틀리면 정답을 알려 주니, 그대로 옮겨 쓰고 다시 확인하세요.</p>
+
+  <div class="q" id="q1">
+    <div class="qh"><span class="qnum">1</span><span class="qtype">서술형</span></div>
+    <p class="qtext">뜨거운 물과 찬물의 온도가 시간에 따라 어떻게 변했는지 쓰세요.</p>
+    <div class="qhint">힌트 · ~해지다가 ~해짐</div>
+    <div class="subq"><label class="f" for="a1h">뜨거운 물</label>
+      <textarea id="a1h" placeholder="뜨거운 물의 온도는 …"></textarea></div>
+    <div class="subq"><label class="f" for="a1c">찬물</label>
+      <textarea id="a1c" placeholder="찬물의 온도는 …"></textarea></div>
+    <div class="msg" id="m1"></div>
+  </div>
+
+  <div class="q" id="q2">
+    <div class="qh"><span class="qnum">2</span><span class="qtype">단답형</span></div>
+    <p class="qtext">뜨거운 물과 찬물의 온도가 같아져서 더 이상 변하지 않는 상태를 무엇이라고 하나요?</p>
+    <div class="qhint">힌트 · 세 글자 (□□□ 상태)</div>
+    <input id="a2" placeholder="답을 쓰세요">
+    <div class="msg" id="m2"></div>
+  </div>
+
+  <div class="q" id="q3">
+    <div class="qh"><span class="qnum">3</span><span class="qtype">서술형 · 오차 원인</span></div>
+    <p class="qtext">두 물의 온도가 같아진 뒤에도 일정하게 유지되지 않고 조금씩 낮아졌다면, 그 까닭은 무엇일까요?</p>
+    <div class="qhint">힌트 · 열이 어디로 갔을까?</div>
+    <textarea id="a3" placeholder="까닭을 쓰세요"></textarea>
+    <div class="msg" id="m3"></div>
+  </div>
+
+  <div class="q" id="q4">
+    <div class="qh"><span class="qnum">4</span><span class="qtype">단답형</span></div>
+    <p class="qtext">두 물이 열평형에 이르렀을 때의 온도는 몇 °C인가요?</p>
+    <div class="qhint">힌트 · 두 물의 온도가 서로 같아진 때를 찾아보세요</div>
+    <input id="a4" inputmode="decimal" placeholder="예: 38.5">
+    <div class="msg" id="m4"></div>
+  </div>
+
+  <div class="msg warn" id="qMsg"></div>
+  <div class="actions"><button id="btnQuiz">답 확인하기</button></div>
+</section>
+
+<section class="screen card" id="s-done">
+  <h2>보고서가 완성되었습니다</h2>
+  <div id="hallSlot"></div>
+  <div class="summary" id="doneSum"></div>
+  <div id="doneGraphSlot"></div>
+  <h3 style="margin:24px 0 8px;font-size:16px">기록한 온도</h3>
+  <div class="tscroll"><table class="readonly" id="doneTbl"></table></div>
+  <h3 style="margin:24px 0 8px;font-size:16px">문제 답</h3>
+  <div id="doneAns"></div>
+  <div class="msg" id="saveMsg"></div>
+  <div class="actions">
+    <button id="btnPrint">인쇄 / PDF로 저장</button>
+    <button class="ghost" id="btnRetry">다시 저장</button>
+    <button class="ghost" id="btnCopy">기록 복사하기</button>
+    <button class="ghost" id="btnRestart">처음부터 다시</button>
+  </div>
+</section>
+
+</div>
+
+<script>
+"use strict";
+
+/* ===================== 설정 ===================== */
+/* 구글 앱스크립트를 배포한 뒤 받은 웹 앱 주소를 아래 따옴표 안에 붙여 넣으세요.
+   비워 두면 저장 없이 화면으로만 확인합니다. */
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyDVomZMZ3Gl21ONlkY9KMrQMiD97DcpPWb1PywrNUVKrWZOfKZ532z6Ynt3pNsoZyr/exec";
+
+/* ===================== 인트로 파티클 ===================== */
+(function intro(){
+  const cv=document.getElementById("pcanvas"), ctx=cv.getContext("2d");
+  let w=0,h=0,parts=[],raf=null;
+  const reduce=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function resize(){
+    const dpr=Math.min(window.devicePixelRatio||1,2);
+    w=cv.clientWidth; h=cv.clientHeight;
+    cv.width=w*dpr; cv.height=h*dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  function seed(){
+    parts=[];
+    const n=Math.round(Math.min(150,Math.max(60,w*h/9000)));
+    for(let i=0;i<n;i++){
+      const hot=i%2===0;
+      parts.push({
+        hot:hot,
+        x: hot? Math.random()*w*0.5 : w*0.5+Math.random()*w*0.5,
+        y: Math.random()*h,
+        r: 1.2+Math.random()*3.2,
+        vx:(hot?1:-1)*(0.12+Math.random()*0.45),
+        vy:(hot?-1:1)*(0.08+Math.random()*0.35),
+        a: 0.25+Math.random()*0.5,
+        ph: Math.random()*6.28
+      });
+    }
+  }
+  function frame(t){
+    ctx.clearRect(0,0,w,h);
+    // 은은한 배경 광원
+    let g=ctx.createRadialGradient(w*0.22,h*0.72,0,w*0.22,h*0.72,Math.max(w,h)*0.55);
+    g.addColorStop(0,"rgba(255,122,69,0.16)"); g.addColorStop(1,"rgba(255,122,69,0)");
+    ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+    g=ctx.createRadialGradient(w*0.8,h*0.28,0,w*0.8,h*0.28,Math.max(w,h)*0.55);
+    g.addColorStop(0,"rgba(89,168,255,0.16)"); g.addColorStop(1,"rgba(89,168,255,0)");
+    ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+
+    parts.forEach(p=>{
+      p.x+=p.vx+Math.sin((t/1400)+p.ph)*0.25;
+      p.y+=p.vy;
+      if(p.x<-10)p.x=w+10; if(p.x>w+10)p.x=-10;
+      if(p.y<-10)p.y=h+10; if(p.y>h+10)p.y=-10;
+      const mid=Math.abs(p.x-w/2)/(w/2);       // 가운데서 섞이며 색이 흐려짐
+      const mix=1-Math.max(0,Math.min(1,mid));
+      const c = p.hot ? [255,122,69] : [89,168,255];
+      const m = [255,220,180];
+      const R=Math.round(c[0]+(m[0]-c[0])*mix*0.55),
+            G=Math.round(c[1]+(m[1]-c[1])*mix*0.55),
+            B=Math.round(c[2]+(m[2]-c[2])*mix*0.55);
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,6.283);
+      ctx.fillStyle=`rgba(${R},${G},${B},${p.a})`; ctx.fill();
+    });
+    raf=requestAnimationFrame(frame);
+  }
+  function start(){ resize(); seed(); if(!reduce){ cancelAnimationFrame(raf); raf=requestAnimationFrame(frame);} else frame(0); }
+  window.addEventListener("resize",()=>{resize();seed();});
+  start();
+  document.getElementById("btnStart").addEventListener("click",()=>{
+    cancelAnimationFrame(raf);
+    document.getElementById("s-intro").classList.add("off");
+    document.getElementById("topHeader").style.display="";
+    show("s-login");
+  });
+})();
+
+/* ===================== 상태 ===================== */
+const NT = 10;      // 0분 ~ 9분
+const SNAP = 2.0;   // 정답에서 2도 이내면 자동으로 제자리에 붙음
+const S = {
+  cls:1, grp:1,
+  roles:{ min:{no:"",name:""}, hot:{no:"",name:""}, cold:{no:"",name:""}, rec:{no:"",name:""} },
+  temps:Array.from({length:NT},(_,i)=>({t:i,hot:null,cold:null})),
+  plot:{hot:{},cold:{}}, locked:{hot:false,cold:false},
+  phase:"hot", tags:{hot:false,cold:false},
+  ans:{}, tries:{q1:0,q2:0,q3:0,q4:0}
+};
+const $ = s=>document.querySelector(s);
+const el = (t,c)=>{const n=document.createElement(t); if(c)n.className=c; return n;};
+const shake = n=>{n.classList.remove("shake"); void n.offsetWidth; n.classList.add("shake");};
+
+/* ===================== 역할 캐릭터 ===================== */
+const SKIN="#F0C39C", HAIR="#3B2B4F", DARK="#241A36";
+function face(cx,cy,extra){
+  return `<circle cx="${cx}" cy="${cy}" r="10" fill="${SKIN}"/>
+    <path d="M${cx-10} ${cy-2} a10 10 0 0 1 20 0 q-10 -6 -20 0z" fill="${HAIR}"/>
+    <circle cx="${cx-3.6}" cy="${cy+1}" r="1.7" fill="${DARK}"/>
+    <circle cx="${cx+3.6}" cy="${cy+1}" r="1.7" fill="${DARK}"/>
+    ${extra||`<path d="M${cx-3} ${cy+5} q3 2.6 6 0" stroke="${DARK}" stroke-width="1.4" fill="none" stroke-linecap="round"/>`}`;
+}
+function body(cx,color){
+  /* 어깨 윗선(y=29)이 얼굴 아래(y=30)와 겹치도록 해서 목이 끊기지 않게 함 */
+  return `<rect x="${cx-3.5}" y="24" width="7" height="8" fill="${SKIN}"/>
+    <path d="M${cx-15} 62 L${cx-15} 41 Q${cx-15} 29 ${cx} 29 Q${cx+15} 29 ${cx+15} 41 L${cx+15} 62 Z" fill="${color}"/>`;
+}
+const CHAR = {
+  /* 1분이 — 손으로 초시계 버튼을 누름 */
+  min:`<svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true">
+    ${body(24,"#7B62C4")}
+    <path d="M34 50 L44 34" stroke="${SKIN}" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="46" cy="30" r="4.4" fill="${SKIN}"/>
+    <circle cx="46" cy="42" r="11" fill="#EFE9FA" stroke="#C6B4F5" stroke-width="2"/>
+    <rect x="43.4" y="27.5" width="5.2" height="4.5" rx="1.6" fill="#C6B4F5"/>
+    <path d="M46 42 L46 35" stroke="${DARK}" stroke-width="1.8" stroke-linecap="round"/>
+    <path d="M46 42 L51 45" stroke="#FF7A45" stroke-width="1.8" stroke-linecap="round"/>
+    <circle cx="46" cy="42" r="1.4" fill="${DARK}"/>
+    ${face(24,20)}
+  </svg>`,
+  /* 뜨거왕 — 디지털 온도계 */
+  hot:`<svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true">
+    ${body(22,"#C1552F")}
+    <path d="M32 52 L42 44" stroke="${SKIN}" stroke-width="6" stroke-linecap="round"/>
+    <rect x="42" y="24" width="15" height="24" rx="4" fill="#F3EEFA" stroke="#FF7A45" stroke-width="2"/>
+    <rect x="45" y="28" width="9" height="8" rx="1.6" fill="#241A36"/>
+    <text x="49.5" y="34.4" font-size="6" font-weight="700" fill="#FF7A45" text-anchor="middle" font-family="sans-serif">62</text>
+    <circle cx="49.5" cy="42" r="2.4" fill="#FF7A45"/>
+    <path d="M49.5 20 q3 3 0 5 q-3 -2 0 -5z" fill="#FF7A45"/>
+    ${face(22,20)}
+  </svg>`,
+  /* 차가왕 — 알코올 온도계 눈금을 읽음 */
+  cold:`<svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true">
+    ${body(22,"#2F6DB5")}
+    <path d="M32 52 L41 42" stroke="${SKIN}" stroke-width="6" stroke-linecap="round"/>
+    <rect x="44" y="16" width="8" height="30" rx="4" fill="#EAF2FF" stroke="#59A8FF" stroke-width="2"/>
+    <rect x="46" y="34" width="4" height="12" fill="#59A8FF"/>
+    <circle cx="48" cy="49" r="6" fill="#59A8FF" stroke="#EAF2FF" stroke-width="1.5"/>
+    <path d="M52 22 h3 M52 26 h3 M52 30 h3 M52 34 h3" stroke="#59A8FF" stroke-width="1.4" stroke-linecap="round"/>
+    ${face(22,20,`<path d="M19 25 q3 3 6 0" stroke="${DARK}" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+      <circle cx="18.4" cy="21" r="3.4" fill="none" stroke="${DARK}" stroke-width="1"/>`)}
+  </svg>`,
+  /* 기록왕 — 크롬북에 기록 */
+  rec:`<svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true">
+    ${body(32,"#2A8C6E")}
+    <path d="M22 50 L28 44 M42 50 L36 44" stroke="${SKIN}" stroke-width="5" stroke-linecap="round"/>
+    <rect x="16" y="40" width="32" height="15" rx="2" fill="#EDE7F8" stroke="#46D6A0" stroke-width="2" transform="skewX(0)"/>
+    <rect x="19" y="42.5" width="26" height="10" rx="1.4" fill="#241A36"/>
+    <path d="M23 46 h18 M23 49 h12" stroke="#46D6A0" stroke-width="1.4" stroke-linecap="round"/>
+    <rect x="13" y="55" width="38" height="4" rx="2" fill="#B9AEDA"/>
+    ${face(32,20)}
+  </svg>`
+};
+const ROLE_META = [
+  {key:"min", cls:"r-min",  name:"1분이", job:"초시계로 1분마다 시간을 알려 줍니다."},
+  {key:"hot", cls:"r-hot",  name:"뜨거왕", job:"뜨거운 물의 온도를 읽어 말해 줍니다."},
+  {key:"cold",cls:"r-cold", name:"차가왕", job:"찬물의 온도를 읽어 말해 줍니다."},
+  {key:"rec", cls:"r-rec",  name:"기록왕", job:"표에 온도를 쓰고 크롬북에 입력합니다."}
+];
+
+/* ===================== 화면 전환 ===================== */
+const STEPS=[["s-login","반·모둠"],["s-roles","역할"],["s-record","온도 기록"],["s-graph","그래프"],["s-quiz","문제"],["s-done","완성"]];
+function show(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("on", s.id===id));
+  drawRail(id); window.scrollTo(0,0);
+}
+function drawRail(id){
+  const rail=$("#rail"); rail.innerHTML="";
+  let cur=STEPS.findIndex(s=>s[0]===id); if(id==="s-confirm") cur=0;
+  STEPS.forEach((s,i)=>{const sp=el("span"); sp.textContent=s[1];
+    if(i===cur) sp.className="on"; else if(i<cur) sp.className="done"; rail.appendChild(sp);});
+}
+
+/* 1. 로그인 */
+(function(){const c=$("#selClass"),g=$("#selGroup");
+  for(let i=1;i<=11;i++) c.add(new Option(i+"반",i));
+  for(let i=1;i<=8;i++) g.add(new Option(i+"모둠",i));})();
+$("#btnLogin").onclick=()=>{
+  S.cls=+$("#selClass").value; S.grp=+$("#selGroup").value;
+  const t=`${S.cls}반 ${S.grp}모둠`;
+  $("#confirmBig").textContent=t; $("#confirmQ").textContent=`정말 ${t}이 맞나요?`;
+  show("s-confirm");
+};
+$("#btnNo").onclick=()=>show("s-login");
+$("#btnYes").onclick=()=>{$("#who").textContent=`${S.cls}반 ${S.grp}모둠`; buildRoles(); show("s-roles");};
+
+/* 2. 역할 */
+function buildRoles(){
+  const box=$("#rolesBox"); if(box.dataset.built) return; box.dataset.built="1";
+  ROLE_META.forEach(r=>{
+    const d=el("div","role "+r.cls);
+    d.innerHTML=`<div class="top"><div class="av">${CHAR[r.key]}</div>
+        <div><div class="nm">${r.name}</div><div class="job">${r.job}</div></div></div>
+      <div class="row">
+        <div><label class="f" for="no-${r.key}">학번</label><input id="no-${r.key}" inputmode="numeric" maxlength="5" placeholder="예: 12"></div>
+        <div><label class="f" for="nm-${r.key}">이름</label><input id="nm-${r.key}" maxlength="10" placeholder="이름"></div>
+      </div>`;
+    box.appendChild(d);
+  });
+}
+$("#btnBackLogin").onclick=()=>show("s-login");
+$("#btnRoles").onclick=()=>{
+  const miss=[];
+  ROLE_META.forEach(r=>{
+    const no=$("#no-"+r.key).value.trim(), nm=$("#nm-"+r.key).value.trim();
+    S.roles[r.key]={no,name:nm}; if(!no||!nm) miss.push(r.name);
+  });
+  const m=$("#rolesMsg");
+  if(miss.length){ m.textContent=`${miss.join(", ")}의 학번과 이름이 비어 있습니다.`; m.classList.add("on"); shake(m); return; }
+  m.classList.remove("on"); buildRecord(); show("s-record");
+};
+
+/* 3. 온도 기록 (가로 표) */
+function buildRecord(){
+  const tb=$("#tblInput"); if(tb.dataset.built) return; tb.dataset.built="1";
+  let h=`<thead><tr><th class="rowh">시간</th>`;
+  for(let t=0;t<NT;t++) h+=`<th>${t}분</th>`;
+  h+=`</tr></thead><tbody><tr class="hotrow"><th class="rowh">뜨거운 물 (°C)</th>`;
+  for(let t=0;t<NT;t++) h+=`<td><input id="h-${t}" inputmode="decimal" placeholder="－"></td>`;
+  h+=`</tr><tr class="coldrow"><th class="rowh">찬물 (°C)</th>`;
+  for(let t=0;t<NT;t++) h+=`<td><input id="c-${t}" inputmode="decimal" placeholder="－"></td>`;
+  tb.innerHTML=h+`</tr></tbody>`;
+  /* 소수 첫째 자리까지로 통일: 54 → 54.0, 53.89 → 53.9 */
+  tb.querySelectorAll("input").forEach(inp=>{
+    inp.addEventListener("blur",()=>{
+      const v=parseFloat(inp.value);
+      inp.value = isFinite(v) ? d1(v).toFixed(1) : "";
+    });
+  });
+}
+const d1 = v => Math.round(v*10)/10;
+$("#btnBackRoles").onclick=()=>show("s-roles");
+$("#btnRecord").onclick=()=>{
+  const bad=[], m=$("#recMsg");
+  S.temps.forEach(r=>{
+    const h=parseFloat($("#h-"+r.t).value), c=parseFloat($("#c-"+r.t).value);
+    r.hot=isFinite(h)?d1(h):null; r.cold=isFinite(c)?d1(c):null;
+    if(r.hot===null||r.cold===null) bad.push(r.t+"분");
+    else if(r.hot<0||r.hot>100||r.cold<0||r.cold>100) bad.push(r.t+"분(0~100)");
+  });
+  if(bad.length){ m.textContent=`아직 비었거나 범위를 벗어난 칸이 있습니다 — ${bad.join(", ")}`; m.classList.add("on"); shake(m); return; }
+  m.classList.remove("on"); setupScale(); startPhase("hot"); show("s-graph");
+};
+
+/* 4. 그래프 */
+const SVGNS="http://www.w3.org/2000/svg";
+const W=660,H=470,PL=64,PR=26,PT=24,PB=54,PW=W-PL-PR,PH=H-PT-PB;
+const DX0=0, DX1=9.5;   // 0분이 세로축과 같은 선에 오도록
+let yMin=0,yMax=100,yStep=10;
+const svg=$("#svg"); let gCurve,gPts,gHint;
+
+function setupScale(){
+  const vals=[]; S.temps.forEach(r=>vals.push(r.hot,r.cold));
+  let lo=Math.min.apply(null,vals), hi=Math.max.apply(null,vals);
+  const pad=Math.max(2,(hi-lo)*0.15); lo-=pad; hi+=pad;
+  if(hi-lo<12){const m=(hi+lo)/2; lo=m-6; hi=m+6;}
+  const span=hi-lo; yStep = span<=16?2 : span<=40?5 : 10;
+  yMin=Math.max(0,Math.floor(lo/yStep)*yStep);
+  yMax=Math.min(105,Math.ceil(hi/yStep)*yStep);
+  drawAxes();
+}
+const X=t=>PL+((t-DX0)/(DX1-DX0))*PW;
+const Y=v=>PT+(yMax-v)/(yMax-yMin)*PH;
+const invX=px=>DX0+(px-PL)/PW*(DX1-DX0);
+const invY=py=>yMax-(py-PT)/PH*(yMax-yMin);
+const snapY=v=>Math.round(v*2)/2;
+const want=(k,t)=>k==="hot"?S.temps[t].hot:S.temps[t].cold;   // 표에 적힌 값 그대로 (소수 첫째 자리)
+
+function mk(tag,attrs,cls){
+  const n=document.createElementNS(SVGNS,tag);
+  for(const k in attrs) n.setAttribute(k,attrs[k]);
+  if(cls) n.setAttribute("class",cls); return n;
+}
+function drawAxes(){
+  svg.innerHTML="";
+  const g=mk("g");
+  for(let t=0;t<NT;t++) g.appendChild(mk("line",{x1:X(t),y1:PT,x2:X(t),y2:PT+PH},"gridline"));
+  for(let v=yMin;v<=yMax+.001;v+=yStep) g.appendChild(mk("line",{x1:PL,y1:Y(v),x2:PL+PW,y2:Y(v)},"gridline"));
+  g.appendChild(mk("line",{x1:PL,y1:PT,x2:PL,y2:PT+PH},"axis"));
+  g.appendChild(mk("line",{x1:PL,y1:PT+PH,x2:PL+PW,y2:PT+PH},"axis"));
+  for(let t=0;t<NT;t++){const tx=mk("text",{x:X(t),y:PT+PH+20,"text-anchor":"middle"},"axlabel"); tx.textContent=t; g.appendChild(tx);}
+  for(let v=yMin;v<=yMax+.001;v+=yStep){const tx=mk("text",{x:PL-10,y:Y(v)+4,"text-anchor":"end"},"axlabel"); tx.textContent=v; g.appendChild(tx);}
+  const xt=mk("text",{x:PL+PW/2,y:PT+PH+44,"text-anchor":"middle"},"axtitle"); xt.textContent="시간 (분)"; g.appendChild(xt);
+  const yt=mk("text",{x:18,y:PT+PH/2,"text-anchor":"middle",transform:`rotate(-90 18 ${PT+PH/2})`},"axtitle");
+  yt.textContent="온도 (°C)"; g.appendChild(yt);
+  svg.appendChild(g);
+  gCurve=mk("g"); svg.appendChild(gCurve);
+  gHint=mk("g"); svg.appendChild(gHint);
+  gPts=mk("g"); svg.appendChild(gPts);
+  const hit=mk("rect",{x:PL,y:PT,width:PW,height:PH,fill:"transparent"});
+  hit.style.cursor="crosshair";
+  hit.addEventListener("pointerdown",onPlot);
+  hit.addEventListener("pointermove",onHover);
+  hit.addEventListener("pointerleave",()=>gHint.innerHTML="");
+  svg.appendChild(hit);
+}
+function svgPos(e){const r=svg.getBoundingClientRect();
+  return {x:(e.clientX-r.left)/r.width*W, y:(e.clientY-r.top)/r.height*H};}
+function onHover(e){
+  if(S.phase!=="hot"&&S.phase!=="cold") return;
+  const p=svgPos(e);
+  const t=Math.max(0,Math.min(NT-1,Math.round(invX(p.x))));
+  const raw=invY(p.y), w=want(S.phase,t);
+  const v = Math.abs(raw-w)<=SNAP ? w : snapY(raw);
+  gHint.innerHTML="";
+  gHint.appendChild(mk("line",{x1:X(t),y1:PT,x2:X(t),y2:PT+PH},"hint-cross"));
+  gHint.appendChild(mk("line",{x1:PL,y1:Y(v),x2:PL+PW,y2:Y(v)},"hint-cross"));
+  const bx=Math.min(X(t)+10,PL+PW-100), by=Math.max(Y(v)-28,PT+2);
+  gHint.appendChild(mk("rect",{x:bx,y:by,width:98,height:22,rx:6,fill:"#2A2040",stroke:"#5F4F84"}));
+  const tx=mk("text",{x:bx+8,y:by+15,"font-size":12,fill:"#F1ECF9"});
+  tx.textContent=`${t}분 · ${v.toFixed(1)}°C`; gHint.appendChild(tx);
+}
+function onPlot(e){
+  if(S.phase!=="hot"&&S.phase!=="cold") return;
+  const p=svgPos(e);
+  const t=Math.max(0,Math.min(NT-1,Math.round(invX(p.x))));
+  const raw=invY(p.y), w=want(S.phase,t);
+  S.plot[S.phase][t] = Math.abs(raw-w)<=SNAP ? w : snapY(raw);
+  renderPts(); $("#gWarn").classList.remove("on");
+}
+function renderPts(badList){
+  gPts.innerHTML="";
+  ["hot","cold"].forEach(k=>{
+    const done=S.locked[k];
+    Object.keys(S.plot[k]).forEach(ts=>{
+      const t=+ts, v=S.plot[k][t], cx=X(t), cy=Y(v);
+      const bad=badList&&k===S.phase&&badList.indexOf(t)>=0;
+      if(bad) gPts.appendChild(mk("circle",{cx,cy,r:13},"badring"));
+      gPts.appendChild(mk("circle",{cx,cy,r:bad?7:6},"pt "+(bad?"pt-bad":(k==="hot"?"pt-hot":"pt-cold"))));
+      if(done||bad){
+        const lab=mk("text",{x:cx+9,y:cy-9,"font-size":11,"font-weight":700,
+          fill:bad?"#FF6B87":(k==="hot"?"#FF7A45":"#59A8FF")});
+        lab.textContent=v.toFixed(1); gPts.appendChild(lab);
+      }
+    });
+  });
+  const cur=S.plot[S.phase]; $("#cnt").textContent=cur?Object.keys(cur).length:0;
+  updateMini();
+}
+function smoothPath(pts){
+  if(pts.length<2) return "";
+  let d=`M ${pts[0].x.toFixed(2)} ${pts[0].y.toFixed(2)}`;
+  for(let i=0;i<pts.length-1;i++){
+    const p0=pts[i-1]||pts[i],p1=pts[i],p2=pts[i+1],p3=pts[i+2]||p2;
+    d+=` C ${(p1.x+(p2.x-p0.x)/6).toFixed(2)} ${(p1.y+(p2.y-p0.y)/6).toFixed(2)}, `+
+       `${(p2.x-(p3.x-p1.x)/6).toFixed(2)} ${(p2.y-(p3.y-p1.y)/6).toFixed(2)}, `+
+       `${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
+  }
+  return d;
+}
+function drawCurve(kind){
+  const pts=[]; for(let t=0;t<NT;t++) pts.push({x:X(t),y:Y(S.plot[kind][t])});
+  const path=mk("path",{d:smoothPath(pts)},"curve "+(kind==="hot"?"curve-hot":"curve-cold"));
+  gCurve.appendChild(path);
+  if(!window.matchMedia("(prefers-reduced-motion: reduce)").matches){
+    const L=path.getTotalLength();
+    path.style.strokeDasharray=L; path.style.strokeDashoffset=L;
+    path.getBoundingClientRect();
+    path.style.transition="stroke-dashoffset 900ms ease-out";
+    path.style.strokeDashoffset=0;
+  }
+}
+function startPhase(kind){
+  S.phase=kind; const isHot=kind==="hot";
+  $("#gTitle").textContent=isHot?"뜨거운 물 온도를 점으로 찍으세요":"이번에는 찬물 온도를 점으로 찍으세요";
+  $("#gLead").textContent=isHot
+    ?"가로축은 시간, 세로축은 온도입니다. 0분부터 9분까지 표에 적은 값에 맞게 점 10개를 찍으세요."
+    :"뜨거운 물 곡선은 그대로 두고, 찬물 값으로 점 10개를 더 찍으세요.";
+  $("#stepTitle").textContent=isHot?"1단계 · 뜨거운 물":"2단계 · 찬물";
+  $("#stepText").textContent="표를 보고 점을 찍으세요. 가까이 찍으면 정확한 자리에 붙습니다.";
+  $("#btnCheck").style.display=""; $("#btnClear").style.display="";
+  $("#gOk").classList.remove("on"); $("#gWarn").classList.remove("on");
+  renderPts();
+}
+function updateMini(){
+  const isHot=S.phase==="hot", isCold=S.phase==="cold";
+  let h=`<thead><tr><th class="rowh">시간</th>`;
+  for(let t=0;t<NT;t++) h+=`<th>${t}분</th>`;
+  h+=`</tr></thead><tbody><tr class="hotrow ${isHot?"hl-hot":""}"><th class="rowh">뜨거운 물</th>`;
+  for(let t=0;t<NT;t++) h+=`<td class="${isHot?"on":(isCold?"dim":"")}">${S.temps[t].hot.toFixed(1)}</td>`;
+  h+=`</tr><tr class="coldrow ${isCold?"hl-cold":""}"><th class="rowh">찬물</th>`;
+  for(let t=0;t<NT;t++) h+=`<td class="${isCold?"on":(isHot?"dim":"")}">${S.temps[t].cold.toFixed(1)}</td>`;
+  $("#miniTbl").innerHTML=h+`</tr></tbody>`;
+}
+$("#btnClear").onclick=()=>{
+  if(S.phase!=="hot"&&S.phase!=="cold") return;
+  S.plot[S.phase]={}; $("#gWarn").classList.remove("on"); renderPts();
+};
+$("#btnCheck").onclick=()=>{
+  const kind=S.phase; if(kind!=="hot"&&kind!=="cold") return;
+  const placed=Object.keys(S.plot[kind]).length, warn=$("#gWarn");
+  if(placed<NT){
+    warn.textContent=`아직 점이 ${placed}개입니다. 0분부터 9분까지 점 ${NT}개를 모두 찍은 뒤 확인하세요.`;
+    warn.classList.add("on"); shake(warn); renderPts(); return;
+  }
+  const bad=[];
+  for(let t=0;t<NT;t++) if(Math.abs(S.plot[kind][t]-want(kind,t))>0.001) bad.push(t);
+  if(bad.length){
+    warn.textContent=`${bad.map(t=>t+"분").join(", ")}의 점이 표의 온도와 많이 다릅니다. 빨간 점을 표의 값 가까이 다시 찍으세요.`;
+    warn.classList.add("on"); shake(warn); renderPts(bad); return;
+  }
+  warn.classList.remove("on"); S.locked[kind]=true; renderPts(); drawCurve(kind);
+  const ok=$("#gOk"); ok.classList.add("on");
+  ok.textContent=kind==="hot"?"모두 맞았습니다. 뜨거운 물 곡선을 그렸어요.":"모두 맞았습니다. 두 곡선이 완성되었어요.";
+  setTimeout(kind==="hot"?function(){startPhase("cold");}:startLabelPhase, 950);
+};
+
+/* 5. 이름표 */
+function startLabelPhase(){
+  S.phase="label";
+  $("#gTitle").textContent="곡선에 이름표를 붙이세요";
+  $("#gLead").textContent="이름표 두 개를 끌어서 알맞은 곡선 위에 놓으면 문제로 넘어갑니다.";
+  $("#stepTitle").textContent="3단계 · 이름표";
+  $("#stepText").textContent="뜨거운 물 곡선과 찬물 곡선을 구별해 보세요.";
+  $("#btnCheck").style.display="none"; $("#btnClear").style.display="none";
+  $("#trayBox").style.display=""; $("#gOk").classList.remove("on"); updateMini();
+}
+function curvePixelPoints(kind){
+  const r=$("#plotwrap").getBoundingClientRect(), sx=r.width/W, sy=r.height/H, out=[];
+  for(let t=0;t<=NT-1;t+=0.25){
+    const i=Math.floor(t), f=t-i;
+    const a=S.plot[kind][i], b=S.plot[kind][Math.min(NT-1,i+1)];
+    out.push({x:X(t)*sx, y:Y(a+(b-a)*f)*sy});
+  }
+  return out;
+}
+function nearest(kind,px,py){
+  let d=Infinity,best=null;
+  curvePixelPoints(kind).forEach(p=>{const dd=Math.hypot(p.x-px,p.y-py); if(dd<d){d=dd;best=p;}});
+  return {d,p:best};
+}
+let drag=null;
+document.querySelectorAll("#tray .tag").forEach(tag=>{
+  tag.addEventListener("pointerdown",e=>{
+    if(S.phase!=="label") return;
+    e.preventDefault();
+    const r=tag.getBoundingClientRect(), clone=tag.cloneNode(true);
+    clone.className=tag.className+" dragging";
+    clone.style.left=r.left+"px"; clone.style.top=r.top+"px"; clone.style.width=r.width+"px";
+    document.body.appendChild(clone);
+    drag={kind:tag.dataset.kind,node:clone,ox:e.clientX-r.left,oy:e.clientY-r.top,src:tag};
+    tag.style.opacity=.35;
+  });
+});
+window.addEventListener("pointermove",e=>{
+  if(!drag) return;
+  drag.node.style.left=(e.clientX-drag.ox)+"px";
+  drag.node.style.top=(e.clientY-drag.oy)+"px";
+});
+window.addEventListener("pointerup",e=>{
+  if(!drag) return;
+  const kind=drag.kind, node=drag.node, src=drag.src;
+  node.remove(); src.style.opacity=""; drag=null;
+  const wrap=$("#plotwrap"), r=wrap.getBoundingClientRect();
+  const px=e.clientX-r.left, py=e.clientY-r.top;
+  if(px<0||py<0||px>r.width||py>r.height) return;
+  const warn=$("#gWarn"), ok=$("#gOk");
+  const mine=nearest(kind,px,py), other=nearest(kind==="hot"?"cold":"hot",px,py);
+  if(mine.d>70&&other.d>70){
+    warn.textContent="곡선에서 너무 멀어요. 이름표를 곡선 가까이 놓아 주세요.";
+    ok.classList.remove("on"); warn.classList.add("on"); shake(warn); return;
+  }
+  if(other.d<mine.d){
+    warn.textContent=`여기는 ${kind==="hot"?"찬물":"뜨거운 물"} 곡선입니다. 색을 잘 보고 다시 붙여 보세요.`;
+    ok.classList.remove("on"); warn.classList.add("on"); shake(warn); return;
+  }
+  warn.classList.remove("on"); placeTag(kind,mine.p); src.classList.add("used"); S.tags[kind]=true;
+  if(S.tags.hot&&S.tags.cold){
+    ok.classList.add("on"); ok.textContent="이름표를 모두 붙였습니다. 이제 문제를 풀어 봅시다.";
+    setTimeout(()=>{prepQuiz(); show("s-quiz");},900);
+  }
+});
+function placeTag(kind,anchor){
+  const wrap=$("#plotwrap"), tag=el("span","tag placed "+(kind==="hot"?"t-hot":"t-cold"));
+  tag.innerHTML=`<span class="dot"></span>${kind==="hot"?"뜨거운 물":"찬물"}`;
+  const offY=kind==="hot"?-42:22;
+  const left=Math.max(6,Math.min(anchor.x-40,wrap.clientWidth-116));
+  const top=Math.max(4,Math.min(anchor.y+offY,wrap.clientHeight-36));
+  tag.style.left=left+"px"; tag.style.top=top+"px"; wrap.appendChild(tag);
+  const r=wrap.getBoundingClientRect(), sx=W/r.width, sy=H/r.height;
+  gCurve.appendChild(mk("line",{x1:(left+48)*sx,y1:(top+(offY<0?30:2))*sy,
+    x2:anchor.x*sx,y2:anchor.y*sy},"leader"));
+}
+
+/* 6. 문제 채점 (띄어쓰기·문장부호 무시) */
+const norm = s => (s||"").replace(/\s+/g,"").replace(/[.,·~!?"'()\[\]]/g,"");
+const DOWN=/(낮아|내려|떨어|감소|줄어|식어|하강)/;
+const UP=/(높아|올라|증가|상승|따뜻|더워)/;
+const FLAT=/(일정|변하지않|변화가없|변화없|그대로|같아|유지|멈추|더이상변)/;
+const HEAT=/(열|에너지|온도)/;
+const LOSE=/(빠져나|빠져|새어|새나|잃|손실|방출|빼앗)/;
+const OUT=/(밖|바깥|외부|과학실|공기|주위|주변)/;
+const HINTS={
+  q1:["‘~해지다가 ~해짐’ 두 마디로 쓰세요. 온도가 어떻게 되다가, 나중에는 어떻게 되었나요?",
+      "뜨거운 물과 찬물의 첫 낱말은 서로 반대입니다. 두 번째 낱말은 둘 다 ‘ㅇㅈㅎㅈ’.",
+      "뜨거운 물: 낮아지다가 일정해짐 / 찬물: 높아지다가 일정해짐"],
+  q2:["초성 힌트 · ㅇㅍㅎ (상태)",
+      "‘열’로 시작하는 세 글자예요.",
+      "열평형"],
+  q3:["열이 두 물 사이에만 머물렀을까요? 열량계 ‘밖’을 생각해 보세요.",
+      "초성 힌트 · ㅇㄹㄱ 밖으로 ㅇ이 ㅃㅈㄴㄱ기 때문",
+      "열량계 밖(과학실 공기 중)으로 열이 빠져나갔기 때문"],
+  q4:["두 물의 온도가 서로 같아진 때를 표에서 찾아, 그때의 온도를 쓰세요.",
+      "뜨거운 물과 찬물의 값이 거의 같아진 칸이 있지요? 그 온도가 답이에요.",
+      "38.5"]
+};
+/* 두 온도가 가장 가까워진 때(= 열평형에 이른 때)를 찾아 그 평균을 정답으로 삼음 */
+function eqIndex(){
+  let best=NT-1, bd=Infinity;
+  for(let t=0;t<NT;t++){
+    const diff=Math.abs(S.temps[t].hot-S.temps[t].cold);
+    if(diff<bd-0.001){ bd=diff; best=t; }
+  }
+  return best;
+}
+function eqTemp(){ const t=eqIndex(); return d1((S.temps[t].hot+S.temps[t].cold)/2); }
+function prepQuiz(){
+  HINTS.q4[2] = eqTemp().toFixed(1);
+}
+function grade4(){
+  const a=parseFloat($("#a4").value);
+  return {ok: isFinite(a) && Math.abs(a-eqTemp())<=1.0};
+}
+function grade1(){
+  const h=norm($("#a1h").value), c=norm($("#a1c").value);
+  const okH = DOWN.test(h) && FLAT.test(h) && !UP.test(h);
+  const okC = UP.test(c) && FLAT.test(c) && !DOWN.test(c);
+  return {ok:okH&&okC, okH:okH, okC:okC};
+}
+function grade2(){ return {ok:/열평형/.test(norm($("#a2").value))}; }
+function grade3(){
+  const a=norm($("#a3").value);
+  return {ok: HEAT.test(a) && (LOSE.test(a) || (OUT.test(a)&&/(나가|이동|전달|간다|갔)/.test(a)))};
+}
+function feedback(sel,res,key,extra){
+  const box=$(sel), qbox=box.closest(".q");
+  qbox.classList.toggle("right",res.ok);
+  if(res.ok){ box.className="msg on ok"; box.textContent="정답입니다."; return; }
+  S.tries[key]++;
+  const last=HINTS[key].length-1;
+  const lv=Math.min(S.tries[key]-1,last);
+  box.className="msg on "+(S.tries[key]>=2?"hint":"warn");
+  if(lv>=last){
+    box.innerHTML=`정답은 이것입니다. 아래 문장을 그대로 옮겨 쓰고 다시 확인하세요.<br>
+      <b style="font-size:15px">${HINTS[key][lv]}</b>`;
+  }else{
+    box.innerHTML=(extra?extra+"<br>":"")+"다시 생각해 보세요. "+HINTS[key][lv];
+  }
+  shake(box);
+}
+$("#btnQuiz").onclick=()=>{
+  const r1=grade1(), r2=grade2(), r3=grade3(), r4=grade4();
+  let extra1="";
+  if(!r1.ok){
+    if(!r1.okH&&r1.okC) extra1="찬물은 맞았어요. 뜨거운 물 칸을 다시 보세요.";
+    else if(r1.okH&&!r1.okC) extra1="뜨거운 물은 맞았어요. 찬물 칸을 다시 보세요.";
+  }
+  feedback("#m1",r1,"q1",extra1);
+  feedback("#m2",r2,"q2","");
+  feedback("#m3",r3,"q3","");
+  feedback("#m4",r4,"q4","");
+  const qm=$("#qMsg");
+  if(!(r1.ok&&r2.ok&&r3.ok&&r4.ok)){
+    qm.className="msg warn on";
+    qm.textContent="아직 맞히지 못한 문제가 있습니다. 힌트를 보고 다시 써 보세요.";
+    shake(qm); return;
+  }
+  qm.className="msg ok on"; qm.textContent="네 문제 모두 정답입니다.";
+  S.ans={h:$("#a1h").value.trim(), c:$("#a1c").value.trim(),
+         q2:$("#a2").value.trim(), q3:$("#a3").value.trim(), q4:$("#a4").value.trim()};
+  setTimeout(finish,700);
+};
+
+/* 7. 완료 */
+function finish(){
+  S.phase="done";
+  const nm=k=>`${S.roles[k].no}번 ${S.roles[k].name}`;
+  const d=new Date(), ds=`${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일`;
+  $("#hallSlot").innerHTML=`
+    <div class="hall">
+      <div class="crown">🏆</div>
+      <div class="ttl">실험왕</div>
+      <div class="sub">명예의 전당 · ${S.cls}반 ${S.grp}모둠</div>
+      <div class="members">
+        <div class="m"><small>1분이</small>${nm("min")}</div>
+        <div class="m"><small>뜨거왕</small>${nm("hot")}</div>
+        <div class="m"><small>차가왕</small>${nm("cold")}</div>
+        <div class="m"><small>기록왕</small>${nm("rec")}</div>
+      </div>
+      <div>열평형 실험을 정확히 기록하고 그래프를 완성했으며, 네 문제를 모두 맞혔습니다.</div>
+      <div class="show">이 카드를 선생님께 보여 주세요!</div>
+      <div class="stamp">${ds}</div>
+    </div>`;
+  $("#doneSum").innerHTML=`
+    <div class="sumitem"><div class="k">모둠</div><div class="v">${S.cls}반 ${S.grp}모둠</div></div>
+    <div class="sumitem"><div class="k">9분일 때 온도 차</div><div class="v">${Math.abs(S.temps[NT-1].hot-S.temps[NT-1].cold).toFixed(1)} °C</div></div>`;
+  let h=`<thead><tr><th class="rowh">시간</th>`;
+  for(let t=0;t<NT;t++) h+=`<th>${t}분</th>`;
+  h+=`</tr></thead><tbody><tr class="hotrow"><th class="rowh">뜨거운 물 (°C)</th>`;
+  for(let t=0;t<NT;t++) h+=`<td>${S.temps[t].hot.toFixed(1)}</td>`;
+  h+=`</tr><tr class="coldrow"><th class="rowh">찬물 (°C)</th>`;
+  for(let t=0;t<NT;t++) h+=`<td>${S.temps[t].cold.toFixed(1)}</td>`;
+  h+=`</tr><tr><th class="rowh">온도 차 (°C)</th>`;
+  for(let t=0;t<NT;t++) h+=`<td>${Math.abs(S.temps[t].hot-S.temps[t].cold).toFixed(1)}</td>`;
+  $("#doneTbl").innerHTML=h+`</tr></tbody>`;
+  $("#doneAns").innerHTML=`
+    <div class="q right"><div class="qh"><span class="qnum">1</span><span class="qtype">온도 변화</span></div>
+      <div>뜨거운 물 · ${S.ans.h}<br>찬물 · ${S.ans.c}</div></div>
+    <div class="q right"><div class="qh"><span class="qnum">2</span><span class="qtype">온도가 같아진 상태</span></div>
+      <div>${S.ans.q2}</div></div>
+    <div class="q right"><div class="qh"><span class="qnum">3</span><span class="qtype">오차 원인</span></div>
+      <div>${S.ans.q3}</div></div>
+    <div class="q right"><div class="qh"><span class="qnum">4</span><span class="qtype">열평형 온도</span></div>
+      <div>${S.ans.q4} °C</div></div>`;
+  $("#doneGraphSlot").appendChild($("#s-graph").querySelector(".plotwrap"));
+  show("s-done");
+  saveToSheet();
+}
+
+/* 구글 시트 저장 */
+function payload(){
+  const r=k=>[S.roles[k].no,S.roles[k].name];
+  return {
+    cls:S.cls, grp:S.grp,
+    roles:{min:r("min"),hot:r("hot"),cold:r("cold"),rec:r("rec")},
+    hot:S.temps.map(x=>x.hot), cold:S.temps.map(x=>x.cold),
+    ans:S.ans, eq:eqTemp()
+  };
+}
+async function saveToSheet(){
+  const box=$("#saveMsg");
+  if(!GAS_URL){
+    box.className="msg on hint";
+    box.textContent="저장 주소가 설정되어 있지 않아 이 기록은 저장되지 않았습니다. 화면을 선생님께 보여 주세요.";
+    return;
+  }
+  box.className="msg on hint"; box.textContent="저장하는 중…";
+  try{
+    const res=await fetch(GAS_URL,{method:"POST",
+      headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body:JSON.stringify(payload())});
+    const j=await res.json();
+    if(!j||!j.ok) throw new Error("server");
+    box.className="msg on ok"; box.textContent="선생님께 기록이 저장되었습니다.";
+  }catch(err){
+    box.className="msg on warn";
+    box.textContent="저장하지 못했습니다. 인터넷 연결을 확인한 뒤 ‘다시 저장’을 눌러 주세요.";
+  }
+}
+$("#btnRetry").onclick=saveToSheet;
+$("#btnPrint").onclick=()=>window.print();
+$("#btnCopy").onclick=async()=>{
+  const nm=k=>`${S.roles[k].no}번 ${S.roles[k].name}`;
+  let t=`${S.cls}반 ${S.grp}모둠 열평형 실험\n1분이 ${nm("min")} / 뜨거왕 ${nm("hot")} / 차가왕 ${nm("cold")} / 기록왕 ${nm("rec")}\n시간(분)\t`;
+  for(let i=0;i<NT;i++) t+=i+"\t";
+  t+="\n뜨거운물\t"; for(let i=0;i<NT;i++) t+=S.temps[i].hot+"\t";
+  t+="\n찬물\t";   for(let i=0;i<NT;i++) t+=S.temps[i].cold+"\t";
+  t+=`\n1번 뜨거운물: ${S.ans.h}\n1번 찬물: ${S.ans.c}\n2번: ${S.ans.q2}\n3번: ${S.ans.q3}\n4번(열평형 온도): ${S.ans.q4}\n`;
+  try{ await navigator.clipboard.writeText(t); $("#btnCopy").textContent="복사했습니다"; }
+  catch(err){ $("#btnCopy").textContent="복사 실패"; }
+  setTimeout(()=>$("#btnCopy").textContent="기록 복사하기",1800);
+};
+$("#btnRestart").onclick=()=>location.reload();
+drawRail("s-login");
+</script>
+</body>
+</html>
