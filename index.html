@@ -254,7 +254,9 @@ svg.plot{display:block;width:100%;height:auto;touch-action:none}
 
 <section class="screen card" id="s-record">
   <h2>온도를 기록하세요</h2>
-  <p class="lead">먼저 0분(처음 온도)을 적고, 1분이가 시간을 알려 줄 때마다 9분까지 이어서 적습니다. 단위는 섭씨(°C)입니다.</p>
+  <p class="lead">먼저 0분(처음 온도)을 적고, 1분이가 시간을 알려 줄 때마다 9분까지 이어서 적습니다.
+    단위는 섭씨(°C)이고, <b style="color:var(--gold)">소수점 첫째 자리까지</b> 씁니다.
+    54도이면 54.0, 53.89도이면 53.9로 적으세요.</p>
   <div class="tscroll"><table id="tblInput"></table></div>
   <div class="msg warn" id="recMsg"></div>
   <div class="actions">
@@ -373,7 +375,7 @@ svg.plot{display:block;width:100%;height:auto;touch-action:none}
 /* ===================== 설정 ===================== */
 /* 구글 앱스크립트를 배포한 뒤 받은 웹 앱 주소를 아래 따옴표 안에 붙여 넣으세요.
    비워 두면 저장 없이 화면으로만 확인합니다. */
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyDVomZMZ3Gl21ONlkY9KMrQMiD97DcpPWb1PywrNUVKrWZOfKZ532z6Ynt3pNsoZyr/exec";
+const GAS_URL = "";
 
 /* ===================== 인트로 파티클 ===================== */
 (function intro(){
@@ -580,9 +582,9 @@ function buildRecord(){
   let h=`<thead><tr><th class="rowh">시간</th>`;
   for(let t=0;t<NT;t++) h+=`<th>${t}분</th>`;
   h+=`</tr></thead><tbody><tr class="hotrow"><th class="rowh">뜨거운 물 (°C)</th>`;
-  for(let t=0;t<NT;t++) h+=`<td><input id="h-${t}" inputmode="decimal" placeholder="－"></td>`;
+  for(let t=0;t<NT;t++) h+=`<td><input id="h-${t}" inputmode="decimal" placeholder="54.0"></td>`;
   h+=`</tr><tr class="coldrow"><th class="rowh">찬물 (°C)</th>`;
-  for(let t=0;t<NT;t++) h+=`<td><input id="c-${t}" inputmode="decimal" placeholder="－"></td>`;
+  for(let t=0;t<NT;t++) h+=`<td><input id="c-${t}" inputmode="decimal" placeholder="18.0"></td>`;
   tb.innerHTML=h+`</tr></tbody>`;
   /* 소수 첫째 자리까지로 통일: 54 → 54.0, 53.89 → 53.9 */
   tb.querySelectorAll("input").forEach(inp=>{
