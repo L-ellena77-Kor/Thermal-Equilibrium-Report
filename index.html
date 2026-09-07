@@ -156,17 +156,44 @@ svg.plot{display:block;width:100%;height:auto;touch-action:none}
 .subq{margin-bottom:10px}
 
 /* ---------- 명예의 전당 ---------- */
-.hall{border:3px solid var(--gold);border-radius:18px;padding:26px;text-align:center;margin:6px 0 20px;
-  background:radial-gradient(120% 90% at 50% 0%,#3B2B4F 0%,#241A36 60%,#1C1429 100%);
-  box-shadow:0 0 40px rgba(232,184,75,.18) inset}
-.hall .crown{font-size:44px;line-height:1}
-.hall .ttl{font-size:32px;font-weight:800;letter-spacing:-.03em;margin:6px 0 2px;color:var(--gold)}
-.hall .sub{font-size:14px;color:var(--muted);margin-bottom:16px}
-.hall .members{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
-.hall .m{border:1.5px solid var(--line);background:#1F1730;border-radius:10px;padding:8px 12px;font-size:14px;font-weight:700}
-.hall .m small{display:block;font-size:11.5px;color:var(--muted);font-weight:700}
-.hall .show{font-size:16px;font-weight:800;color:var(--hot);margin-top:10px}
-.hall .stamp{font-size:12.5px;color:var(--muted);margin-top:10px}
+.hall{position:relative;overflow:hidden;border:3px solid var(--gold);border-radius:20px;
+  padding:32px 24px;text-align:center;margin:6px 0 22px;
+  background:
+    radial-gradient(120% 80% at 50% -10%,rgba(255,214,120,.32) 0%,rgba(255,190,90,.10) 42%,rgba(0,0,0,0) 72%),
+    radial-gradient(90% 70% at 50% 110%,rgba(232,184,75,.20) 0%,rgba(0,0,0,0) 70%),
+    linear-gradient(165deg,#3E2F1C 0%,#2C2138 45%,#1F1730 100%);
+  box-shadow:0 0 0 1px rgba(255,214,120,.35) inset, 0 0 46px rgba(232,184,75,.28) inset,
+             0 10px 34px rgba(0,0,0,.45)}
+.hall::before{content:"";position:absolute;inset:-40% -10%;pointer-events:none;
+  background:conic-gradient(from 0deg,rgba(255,214,120,.13) 0deg,rgba(255,214,120,0) 22deg,
+    rgba(255,214,120,.13) 44deg,rgba(255,214,120,0) 66deg,rgba(255,214,120,.13) 88deg,
+    rgba(255,214,120,0) 110deg,rgba(255,214,120,.13) 132deg,rgba(255,214,120,0) 154deg,
+    rgba(255,214,120,.13) 176deg,rgba(255,214,120,0) 198deg,rgba(255,214,120,.13) 220deg,
+    rgba(255,214,120,0) 242deg,rgba(255,214,120,.13) 264deg,rgba(255,214,120,0) 286deg,
+    rgba(255,214,120,.13) 308deg,rgba(255,214,120,0) 330deg,rgba(255,214,120,.13) 360deg);
+  animation:spin 26s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hall>*{position:relative;z-index:1}
+.hall .crown{font-size:52px;line-height:1;filter:drop-shadow(0 0 14px rgba(255,200,90,.6))}
+.hall .ttl{font-size:clamp(38px,7vw,56px);font-weight:800;letter-spacing:-.04em;margin:4px 0 6px;
+  background:linear-gradient(180deg,#FFF3D0 0%,#FFD470 45%,#D99A22 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  text-shadow:0 0 28px rgba(255,200,90,.35)}
+.hall .grp{font-size:clamp(26px,5vw,38px);font-weight:800;letter-spacing:-.02em;
+  color:#FFE9AE;text-shadow:0 0 18px rgba(255,200,90,.45);margin-bottom:4px}
+.hall .sub{font-size:13.5px;color:#C9B98E;letter-spacing:.12em;font-weight:700;margin-bottom:22px}
+.hall .members{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.hall .m{border:1.5px solid rgba(255,214,120,.45);border-radius:14px;padding:14px 8px;
+  background:linear-gradient(180deg,rgba(255,214,120,.14),rgba(255,214,120,.04))}
+.hall .m .role{display:block;font-size:13px;color:#E8C978;font-weight:800;margin-bottom:6px;letter-spacing:.02em}
+.hall .m .name{display:block;font-size:clamp(19px,3.2vw,25px);font-weight:800;color:#FFF6E2;
+  letter-spacing:-.02em;line-height:1.15}
+.hall .m .no{display:block;font-size:12.5px;color:#C9B98E;font-weight:700;margin-top:3px}
+.hall .desc{font-size:15px;color:#EADFC6;font-weight:600;line-height:1.7}
+.hall .show{font-size:clamp(18px,3vw,22px);font-weight:800;color:#FFD470;margin-top:14px;
+  text-shadow:0 0 16px rgba(255,200,90,.4)}
+.hall .stamp{font-size:12.5px;color:#A2946F;margin-top:12px;font-weight:700}
+@media (max-width:700px){.hall .members{grid-template-columns:repeat(2,1fr)}}
 
 .summary{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:20px}
 .sumitem{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--card2)}
@@ -375,7 +402,7 @@ svg.plot{display:block;width:100%;height:auto;touch-action:none}
 /* ===================== 설정 ===================== */
 /* 구글 앱스크립트를 배포한 뒤 받은 웹 앱 주소를 아래 따옴표 안에 붙여 넣으세요.
    비워 두면 저장 없이 화면으로만 확인합니다. */
-const GAS_URL = "";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyDVomZMZ3Gl21ONlkY9KMrQMiD97DcpPWb1PywrNUVKrWZOfKZ532z6Ynt3pNsoZyr/exec";
 
 /* ===================== 인트로 파티클 ===================== */
 (function intro(){
@@ -941,19 +968,19 @@ $("#btnQuiz").onclick=()=>{
 function finish(){
   S.phase="done";
   const nm=k=>`${S.roles[k].no}번 ${S.roles[k].name}`;
+  const mem=(label,k)=>`<div class="m"><span class="role">${label}</span>
+      <span class="name">${S.roles[k].name}</span><span class="no">${S.roles[k].no}번</span></div>`;
   const d=new Date(), ds=`${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일`;
   $("#hallSlot").innerHTML=`
     <div class="hall">
       <div class="crown">🏆</div>
       <div class="ttl">실험왕</div>
-      <div class="sub">명예의 전당 · ${S.cls}반 ${S.grp}모둠</div>
+      <div class="grp">${S.cls}반 ${S.grp}모둠</div>
+      <div class="sub">명예의 전당</div>
       <div class="members">
-        <div class="m"><small>1분이</small>${nm("min")}</div>
-        <div class="m"><small>뜨거왕</small>${nm("hot")}</div>
-        <div class="m"><small>차가왕</small>${nm("cold")}</div>
-        <div class="m"><small>기록왕</small>${nm("rec")}</div>
+        ${mem("1분이","min")}${mem("뜨거왕","hot")}${mem("차가왕","cold")}${mem("기록왕","rec")}
       </div>
-      <div>열평형 실험을 정확히 기록하고 그래프를 완성했으며, 네 문제를 모두 맞혔습니다.</div>
+      <div class="desc">열평형 실험을 정확히 기록하고 그래프를 완성했으며,<br>네 문제를 모두 맞혔습니다.</div>
       <div class="show">이 카드를 선생님께 보여 주세요!</div>
       <div class="stamp">${ds}</div>
     </div>`;
