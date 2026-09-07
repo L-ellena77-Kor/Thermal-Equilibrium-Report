@@ -174,11 +174,28 @@ svg.plot{display:block;width:100%;height:auto;touch-action:none}
   animation:spin 26s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .hall>*{position:relative;z-index:1}
-.hall .crown{font-size:52px;line-height:1;filter:drop-shadow(0 0 14px rgba(255,200,90,.6))}
+.hall .shine{position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden;border-radius:17px}
+.hall .shine::after{content:"";position:absolute;top:-60%;left:-70%;width:45%;height:220%;
+  background:linear-gradient(90deg,rgba(255,255,255,0) 0%,rgba(255,246,220,.42) 50%,rgba(255,255,255,0) 100%);
+  transform:rotate(18deg);animation:sweep 4.6s ease-in-out infinite}
+@keyframes sweep{0%{left:-70%}55%{left:130%}100%{left:130%}}
+.spk{position:absolute;z-index:3;pointer-events:none;
+  background:linear-gradient(180deg,#FFFFFF 0%,#FFE9A8 55%,#F0B93A 100%);
+  clip-path:polygon(50% 0%,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0% 50%,40% 40%);
+  filter:drop-shadow(0 0 6px rgba(255,220,140,.9));
+  animation:twinkle 2.6s ease-in-out infinite}
+@keyframes twinkle{
+  0%,100%{transform:scale(.25) rotate(0deg);opacity:0}
+  15%{opacity:1}
+  45%{transform:scale(1) rotate(45deg);opacity:1}
+  70%{transform:scale(.4) rotate(80deg);opacity:.25}}
 .hall .ttl{font-size:clamp(38px,7vw,56px);font-weight:800;letter-spacing:-.04em;margin:4px 0 6px;
-  background:linear-gradient(180deg,#FFF3D0 0%,#FFD470 45%,#D99A22 100%);
+  background:linear-gradient(100deg,#D99A22 0%,#FFD470 22%,#FFFDF2 34%,#FFD470 46%,#D99A22 70%,#FFD470 100%);
+  background-size:260% 100%;
   -webkit-background-clip:text;background-clip:text;color:transparent;
-  text-shadow:0 0 28px rgba(255,200,90,.35)}
+  animation:gleam 3.4s linear infinite}
+@keyframes gleam{0%{background-position:180% 0}100%{background-position:-80% 0}}
+.hall .crown{font-size:52px;line-height:1;filter:drop-shadow(0 0 14px rgba(255,200,90,.6))}
 .hall .grp{font-size:clamp(26px,5vw,38px);font-weight:800;letter-spacing:-.02em;
   color:#FFE9AE;text-shadow:0 0 18px rgba(255,200,90,.45);margin-bottom:4px}
 .hall .sub{font-size:13.5px;color:#C9B98E;letter-spacing:.12em;font-weight:700;margin-bottom:22px}
@@ -964,6 +981,22 @@ $("#btnQuiz").onclick=()=>{
   setTimeout(finish,700);
 };
 
+/* 카드 반짝임 */
+function sparkle(card){
+  if(!card) return;
+  card.appendChild(el("div","shine"));
+  if(window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  for(let i=0;i<22;i++){
+    const s=el("span","spk"), size=6+Math.random()*16;
+    s.style.width=size+"px"; s.style.height=size+"px";
+    s.style.left=(Math.random()*94+2)+"%";
+    s.style.top=(Math.random()*88+3)+"%";
+    s.style.animationDelay=(Math.random()*2.6).toFixed(2)+"s";
+    s.style.animationDuration=(2.0+Math.random()*1.8).toFixed(2)+"s";
+    card.appendChild(s);
+  }
+}
+
 /* 7. 완료 */
 function finish(){
   S.phase="done";
@@ -984,6 +1017,7 @@ function finish(){
       <div class="show">이 카드를 선생님께 보여 주세요!</div>
       <div class="stamp">${ds}</div>
     </div>`;
+  sparkle($("#hallSlot").querySelector(".hall"));
   $("#doneSum").innerHTML=`
     <div class="sumitem"><div class="k">모둠</div><div class="v">${S.cls}반 ${S.grp}모둠</div></div>
     <div class="sumitem"><div class="k">9분일 때 온도 차</div><div class="v">${Math.abs(S.temps[NT-1].hot-S.temps[NT-1].cold).toFixed(1)} °C</div></div>`;
@@ -1017,7 +1051,8 @@ function payload(){
     cls:S.cls, grp:S.grp,
     roles:{min:r("min"),hot:r("hot"),cold:r("cold"),rec:r("rec")},
     hot:S.temps.map(x=>x.hot), cold:S.temps.map(x=>x.cold),
-    ans:S.ans, eq:eqTemp()
+    ans:S.ans, eq:eqTemp(),
+    tries:{q1:S.tries.q1+1, q2:S.tries.q2+1, q3:S.tries.q3+1, q4:S.tries.q4+1}
   };
 }
 async function saveToSheet(){
