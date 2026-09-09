@@ -220,7 +220,10 @@ svg.plot{display:block;width:100%;height:auto;touch-action:none}
 .pvbar{background:linear-gradient(90deg,#3E2F1C,#2C2138);border-bottom:1px solid var(--gold);
   color:#FFE9AE;font-size:13.5px;padding:9px 20px;text-align:center}
 .pvbar b{color:var(--gold);margin-right:8px}
-.pvbar a{color:#C9B98E;margin-left:14px;font-weight:700}
+.pvsteps{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:9px}
+.pvsteps button{background:transparent;color:#FFE9AE;border:1.5px solid var(--gold);
+  border-radius:999px;padding:6px 16px;font-size:13.5px;font-weight:700}
+.pvsteps button.on{background:var(--gold);color:#1A1226}
 .rail span.click{cursor:pointer;border-color:var(--line)}
 .rail span.click:hover{color:var(--gold);border-color:var(--gold)}
 
@@ -270,8 +273,8 @@ svg.plot{display:block;width:100%;height:auto;touch-action:none}
 </header>
 
 <div class="pvbar" id="pvbar" style="display:none">
-  <b>미리보기 모드</b> 위 단계를 아무 순서로나 눌러 볼 수 있습니다. 기록은 저장되지 않습니다.
-  <a href="#" id="pvEnd">미리보기 끄기</a>
+  <b>미리보기 모드</b> 기록은 저장되지 않습니다. 아래 단추로 아무 곳이나 바로 가세요.
+  <div class="pvsteps" id="pvsteps"></div>
 </div>
 
 <div class="wrap">
@@ -497,9 +500,7 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbyDVomZMZ3Gl21ONlkY9KMr
     document.getElementById("topHeader").style.display="";
     show("s-login");
   });
-  const q=new URLSearchParams(location.search).get("preview")==="1";
-  const pass=parseInt(localStorage.getItem("teacherPreview")||"0",10);
-  if(q && pass && Date.now()<pass){
+  if(new URLSearchParams(location.search).get("preview")==="1"){
     cancelAnimationFrame(raf);
     document.getElementById("s-intro").classList.add("off");
     document.getElementById("topHeader").style.display="";
@@ -590,14 +591,8 @@ const ROLE_META = [
 ];
 
 /* ===================== 화면 전환 ===================== */
-/* 미리보기 모드 — 대시보드에서 비밀번호를 통과해야 통행증이 생깁니다 (4시간 유효) */
-function previewPass(){
-  if(new URLSearchParams(location.search).get("preview")!=="1") return false;
-  const t=parseInt(localStorage.getItem("teacherPreview")||"0",10);
-  if(!t || Date.now()>t){ localStorage.removeItem("teacherPreview"); return false; }
-  return true;
-}
-const PREVIEW = previewPass();
+/* 미리보기 모드 — 주소 뒤에 ?preview=1 이 붙으면 켜집니다 */
+const PREVIEW = new URLSearchParams(location.search).get("preview")==="1";
 
 const STEPS=[["s-login","반·모둠"],["s-roles","역할"],["s-record","온도 기록"],["s-graph","그래프"],["s-quiz","문제"],["s-done","완성"]];
 function show(id){
@@ -613,6 +608,15 @@ function drawRail(id){
     if(PREVIEW){ sp.className+=" click"; sp.onclick=()=>gotoStep(s[0]); }
     rail.appendChild(sp);
   });
+  if(PREVIEW){
+    const box=$("#pvsteps"); box.innerHTML="";
+    STEPS.forEach((s,i)=>{
+      const b=el("button"); b.textContent=(i+1)+". "+s[1];
+      if(i===cur) b.className="on";
+      b.onclick=()=>gotoStep(s[0]);
+      box.appendChild(b);
+    });
+  }
 }
 
 /* 미리보기: 아무 단계로나 건너뛰기 */
@@ -1204,11 +1208,6 @@ $("#btnCopy").onclick=async()=>{
   setTimeout(()=>$("#btnCopy").textContent="기록 복사하기",1800);
 };
 $("#btnRestart").onclick=()=>location.reload();
-$("#pvEnd").onclick=e=>{
-  e.preventDefault();
-  localStorage.removeItem("teacherPreview");
-  location.href=location.pathname;
-};
 if(PREVIEW) previewInit(); else drawRail("s-login");
 </script>
 </body>
