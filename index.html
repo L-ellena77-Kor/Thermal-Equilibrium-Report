@@ -350,6 +350,7 @@ svg.plot{display:block;width:100%;height:auto;touch-action:none}
       <div class="actions" style="margin-top:0">
         <button id="btnCheck">점 확인하기</button>
         <button class="ghost small" id="btnClear">점 지우기</button>
+        <button class="ghost small" id="btnAuto" style="display:none">자동으로 찍기</button>
       </div>
     </div>
   </div>
@@ -631,23 +632,24 @@ function homeGraph(){
   const p=$(".plotwrap"), home=$("#plotHome");
   if(p && home && p.parentElement!==home) home.insertBefore(p,home.firstChild);
 }
-function gotoStep(id){
-  if(id==="s-login"||id==="s-roles"){ buildRoles(); show(id); return; }
+/* 미리보기를 열면 예시 자료를 미리 다 채워 둡니다 — 아무것도 입력하지 않아도 됩니다 */
+function previewInit(){
+  S.cls=1; S.grp=1;
   fillSample();
-  if(id==="s-record"){ show(id); return; }
+  S.ans=Object.assign({},SAMPLE.ans);
+  setupScale(); startPhase("hot");
+  $("#a1h").value=S.ans.h; $("#a1c").value=S.ans.c;
+  $("#a2").value=S.ans.q2; $("#a3").value=S.ans.q3; $("#a4").value=S.ans.q4;
+  prepQuiz();
+  show("s-login");
+}
+function gotoStep(id){
+  if(id==="s-login"||id==="s-roles"||id==="s-record"){ show(id); return; }
   homeGraph();
-  if(id==="s-graph"){
-    if(!S.locked.hot&&!S.locked.cold){ setupScale(); startPhase("hot"); }
-    show(id); return;
-  }
-  setupScale();
+  if(id==="s-graph"){ show(id); return; }
   if(id==="s-quiz"){ prepQuiz(); show(id); return; }
   if(id==="s-done"){
     if(!S.ans.q2) S.ans=Object.assign({},SAMPLE.ans);
-    ["a1h","a1c","a2","a3","a4"].forEach((k,i)=>{
-      const v=[S.ans.h,S.ans.c,S.ans.q2,S.ans.q3,S.ans.q4][i];
-      if($("#"+k) && !$("#"+k).value) $("#"+k).value=v;
-    });
     finish();
   }
 }
@@ -850,6 +852,7 @@ function startPhase(kind){
   $("#stepTitle").textContent=isHot?"1단계 · 뜨거운 물":"2단계 · 찬물";
   $("#stepText").textContent="표를 보고 점을 찍으세요. 가까이 찍으면 정확한 자리에 붙습니다.";
   $("#btnCheck").style.display=""; $("#btnClear").style.display="";
+  if(PREVIEW) $("#btnAuto").style.display="";
   $("#gOk").classList.remove("on"); $("#gWarn").classList.remove("on");
   renderPts();
 }
@@ -866,6 +869,11 @@ function updateMini(){
 $("#btnClear").onclick=()=>{
   if(S.phase!=="hot"&&S.phase!=="cold") return;
   S.plot[S.phase]={}; $("#gWarn").classList.remove("on"); renderPts();
+};
+$("#btnAuto").onclick=()=>{
+  if(S.phase!=="hot"&&S.phase!=="cold") return;
+  for(let t=0;t<NT;t++) S.plot[S.phase][t]=want(S.phase,t);
+  renderPts();
 };
 $("#btnCheck").onclick=()=>{
   const kind=S.phase; if(kind!=="hot"&&kind!=="cold") return;
@@ -894,6 +902,7 @@ function startLabelPhase(){
   $("#stepTitle").textContent="3단계 · 이름표";
   $("#stepText").textContent="뜨거운 물 곡선과 찬물 곡선을 구별해 보세요.";
   $("#btnCheck").style.display="none"; $("#btnClear").style.display="none";
+  $("#btnAuto").style.display="none";
   $("#trayBox").style.display=""; $("#gOk").classList.remove("on"); updateMini();
 }
 function curvePixelPoints(kind){
@@ -1187,7 +1196,7 @@ $("#btnCopy").onclick=async()=>{
   setTimeout(()=>$("#btnCopy").textContent="기록 복사하기",1800);
 };
 $("#btnRestart").onclick=()=>location.reload();
-drawRail("s-login");
+if(PREVIEW) previewInit(); else drawRail("s-login");
 </script>
 </body>
 </html>
