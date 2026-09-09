@@ -160,8 +160,13 @@ async function auth(){
     PW=pw; $("#pw").value="";
     m.classList.remove("on");
     $("#s-auth").style.display="none";
-    $("#topRight").innerHTML=`<button class="ghost small" id="btnReload">새로고침</button>`;
+    $("#topRight").innerHTML=`<button class="ghost small" id="btnPreview">학생 화면 미리보기</button>
+      <button class="ghost small" id="btnReload">새로고침</button>`;
     $("#btnReload").onclick=reload;
+    $("#btnPreview").onclick=()=>{
+      sessionStorage.setItem("teacherPreview","1");
+      window.open("index.html?preview=1","_blank","noopener");
+    };
     ingest(data.rows); render();
   }catch(err){
     m.className="msg warn on"; m.textContent="연결하지 못했습니다. 주소와 인터넷 연결을 확인하세요.";

@@ -217,6 +217,12 @@ svg.plot{display:block;width:100%;height:auto;touch-action:none}
 .sumitem .k{font-size:12.5px;color:var(--muted);font-weight:700}
 .sumitem .v{font-size:15.5px;font-weight:700}
 
+.pvbar{background:linear-gradient(90deg,#3E2F1C,#2C2138);border-bottom:1px solid var(--gold);
+  color:#FFE9AE;font-size:13.5px;padding:9px 20px;text-align:center}
+.pvbar b{color:var(--gold);margin-right:8px}
+.rail span.click{cursor:pointer;border-color:var(--line)}
+.rail span.click:hover{color:var(--gold);border-color:var(--gold)}
+
 .foot{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);
   display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:12.5px;color:#6E6188}
 .foot a{color:#8C7DB0;text-decoration:none;border:1px solid var(--line);
@@ -261,6 +267,10 @@ svg.plot{display:block;width:100%;height:auto;touch-action:none}
   </div>
   <nav class="rail" id="rail"></nav>
 </header>
+
+<div class="pvbar" id="pvbar" style="display:none">
+  <b>미리보기 모드</b> 위 단계를 아무 순서로나 눌러 볼 수 있습니다. 기록은 저장되지 않습니다.
+</div>
 
 <div class="wrap">
 
@@ -313,7 +323,7 @@ svg.plot{display:block;width:100%;height:auto;touch-action:none}
   <h2 id="gTitle">뜨거운 물 온도를 점으로 찍으세요</h2>
   <p class="lead" id="gLead">가로축은 시간, 세로축은 온도입니다.</p>
   <div class="graphlayout">
-    <div>
+    <div id="plotHome">
       <div class="plotwrap" id="plotwrap">
         <svg class="plot" id="svg" viewBox="0 0 660 470" role="img" aria-label="시간에 따른 온도 그래프"></svg>
       </div>
@@ -484,6 +494,13 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbyDVomZMZ3Gl21ONlkY9KMr
     document.getElementById("topHeader").style.display="";
     show("s-login");
   });
+  if(new URLSearchParams(location.search).get("preview")==="1"
+     && sessionStorage.getItem("teacherPreview")==="1"){
+    cancelAnimationFrame(raf);
+    document.getElementById("s-intro").classList.add("off");
+    document.getElementById("topHeader").style.display="";
+    document.getElementById("pvbar").style.display="";
+  }
 })();
 
 /* ===================== 상태 ===================== */
@@ -569,6 +586,10 @@ const ROLE_META = [
 ];
 
 /* ===================== 화면 전환 ===================== */
+/* 미리보기 모드 — 대시보드에서 비밀번호를 통과한 뒤에만 열립니다 */
+const PREVIEW = (new URLSearchParams(location.search).get("preview")==="1")
+  && (sessionStorage.getItem("teacherPreview")==="1");
+
 const STEPS=[["s-login","반·모둠"],["s-roles","역할"],["s-record","온도 기록"],["s-graph","그래프"],["s-quiz","문제"],["s-done","완성"]];
 function show(id){
   document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("on", s.id===id));
@@ -577,8 +598,58 @@ function show(id){
 function drawRail(id){
   const rail=$("#rail"); rail.innerHTML="";
   let cur=STEPS.findIndex(s=>s[0]===id); if(id==="s-confirm") cur=0;
-  STEPS.forEach((s,i)=>{const sp=el("span"); sp.textContent=s[1];
-    if(i===cur) sp.className="on"; else if(i<cur) sp.className="done"; rail.appendChild(sp);});
+  STEPS.forEach((s,i)=>{
+    const sp=el("span"); sp.textContent=s[1];
+    if(i===cur) sp.className="on"; else if(i<cur) sp.className="done";
+    if(PREVIEW){ sp.className+=" click"; sp.onclick=()=>gotoStep(s[0]); }
+    rail.appendChild(sp);
+  });
+}
+
+/* 미리보기: 아무 단계로나 건너뛰기 */
+const SAMPLE={
+  hot:[62.0,57.0,53.0,49.5,46.5,44.0,42.0,40.5,39.8,39.5],
+  cold:[18.0,23.0,27.0,30.5,33.5,36.0,37.5,38.5,39.0,39.2],
+  roles:{min:["7","김서준"],hot:["12","이하윤"],cold:["19","박도현"],rec:["23","최지우"]},
+  ans:{h:"낮아지다가 일정해짐",c:"높아지다가 일정해짐",q2:"열평형",
+       q3:"열량계 밖으로 열이 빠져나갔기 때문",q4:"39.4"}
+};
+function fillSample(){
+  buildRoles(); buildRecord();
+  ROLE_META.forEach(r=>{
+    if(!$("#no-"+r.key).value) $("#no-"+r.key).value=SAMPLE.roles[r.key][0];
+    if(!$("#nm-"+r.key).value) $("#nm-"+r.key).value=SAMPLE.roles[r.key][1];
+    S.roles[r.key]={no:SAMPLE.roles[r.key][0],name:SAMPLE.roles[r.key][1]};
+  });
+  S.temps.forEach(r=>{
+    if(r.hot===null){ r.hot=SAMPLE.hot[r.t]; $("#h-"+r.t).value=r.hot.toFixed(1); }
+    if(r.cold===null){ r.cold=SAMPLE.cold[r.t]; $("#c-"+r.t).value=r.cold.toFixed(1); }
+  });
+  if(!$("#who").textContent) $("#who").textContent=`${S.cls}반 ${S.grp}모둠`;
+}
+function homeGraph(){
+  const p=$(".plotwrap"), home=$("#plotHome");
+  if(p && home && p.parentElement!==home) home.insertBefore(p,home.firstChild);
+}
+function gotoStep(id){
+  if(id==="s-login"||id==="s-roles"){ buildRoles(); show(id); return; }
+  fillSample();
+  if(id==="s-record"){ show(id); return; }
+  homeGraph();
+  if(id==="s-graph"){
+    if(!S.locked.hot&&!S.locked.cold){ setupScale(); startPhase("hot"); }
+    show(id); return;
+  }
+  setupScale();
+  if(id==="s-quiz"){ prepQuiz(); show(id); return; }
+  if(id==="s-done"){
+    if(!S.ans.q2) S.ans=Object.assign({},SAMPLE.ans);
+    ["a1h","a1c","a2","a3","a4"].forEach((k,i)=>{
+      const v=[S.ans.h,S.ans.c,S.ans.q2,S.ans.q3,S.ans.q4][i];
+      if($("#"+k) && !$("#"+k).value) $("#"+k).value=v;
+    });
+    finish();
+  }
 }
 
 /* 1. 로그인 */
@@ -1079,6 +1150,11 @@ function payload(){
 }
 async function saveToSheet(){
   const box=$("#saveMsg");
+  if(PREVIEW){
+    box.className="msg on hint";
+    box.textContent="미리보기 모드입니다. 이 기록은 저장되지 않습니다.";
+    return;
+  }
   if(!GAS_URL){
     box.className="msg on hint";
     box.textContent="저장 주소가 설정되어 있지 않아 이 기록은 저장되지 않았습니다. 화면을 선생님께 보여 주세요.";
