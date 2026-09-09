@@ -892,14 +892,30 @@ function placeTag(kind,anchor){
     x2:anchor.x*sx,y2:anchor.y*sy},"leader"));
 }
 
-/* 6. 문제 채점 (띄어쓰기·문장부호 무시) */
-const norm = s => (s||"").replace(/\s+/g,"").replace(/[.,·~!?"'()\[\]]/g,"");
-const DOWN=/(낮아|내려|떨어|감소|줄어|식어|하강)/;
-const UP=/(높아|올라|증가|상승|따뜻|더워)/;
-const FLAT=/(일정|변하지않|변화가없|변화없|그대로|같아|유지|멈추|더이상변)/;
+/* 6. 문제 채점 — 띄어쓰기·문장부호는 모두 무시하고 뜻만 봅니다 */
+const norm = s => (s||"")
+  .replace(/\s+/g,"")
+  .replace(/[^0-9A-Za-z\uAC00-\uD7A3\u3131-\u318E]/g,"");   // 한글·영문·숫자만 남김
+
+const DOWN=/(낮아|낮았|낮어|내려|내렸|떨어|감소|줄어|줄었|식어|식었|식으|하강|하락|내려감)/;
+const UP=/(높아|높았|올라|올랐|증가|늘어|상승|따뜻|뜨거워|더워|데워)/;
+const FLAT=/(일정|변하지않|변화가없|변화없|변함없|변동없|안변|더이상변|그대로|같아|같게|똑같|유지|멈|정지|평형)/;
+
 const HEAT=/(열|에너지|온도)/;
-const LOSE=/(빠져나|빠져|새어|새나|잃|손실|방출|빼앗)/;
-const OUT=/(밖|바깥|외부|과학실|공기|주위|주변)/;
+const LOSE=/(빠져나|빠져|빠짐|새어|새나|샜|잃|손실|유출|방출|빼앗|뺏|흩어|달아나|날아가|도망|사라)/;
+const OUT=/(밖|바깥|외부|과학실|교실|공기|주위|주변|대기)/;
+const MOVE=/(나가|나감|이동|전달|건너|옮겨|간다|갔|감)/;
+const INSUL=/단열/;
+const BAD=/(안되|안돼|않아|않았|않고|않으|못하|못해|완벽하지|부족|허술|불완전|엉성)/;
+
+/* 뜻이 반대인 답을 걸러내되, 두 물을 함께 설명한 답은 먼저 나온 낱말로 판단 */
+function firstDir(s){
+  const d=s.search(DOWN), u=s.search(UP);
+  if(d<0&&u<0) return null;
+  if(d<0) return "up";
+  if(u<0) return "down";
+  return d<u ? "down" : "up";
+}
 const HINTS={
   q1:["‘~해지다가 ~해짐’ 두 마디로 쓰세요. 온도가 어떻게 되다가, 나중에는 어떻게 되었나요?",
       "뜨거운 물과 찬물의 첫 낱말은 서로 반대입니다. 두 번째 낱말은 둘 다 ‘ㅇㅈㅎㅈ’.",
@@ -933,14 +949,20 @@ function grade4(){
 }
 function grade1(){
   const h=norm($("#a1h").value), c=norm($("#a1c").value);
-  const okH = DOWN.test(h) && FLAT.test(h) && !UP.test(h);
-  const okC = UP.test(c) && FLAT.test(c) && !DOWN.test(c);
+  const okH = DOWN.test(h) && FLAT.test(h) && firstDir(h)==="down";
+  const okC = UP.test(c)   && FLAT.test(c) && firstDir(c)==="up";
   return {ok:okH&&okC, okH:okH, okC:okC};
 }
 function grade2(){ return {ok:/열평형/.test(norm($("#a2").value))}; }
 function grade3(){
   const a=norm($("#a3").value);
-  return {ok: HEAT.test(a) && (LOSE.test(a) || (OUT.test(a)&&/(나가|이동|전달|간다|갔)/.test(a)))};
+  if(INSUL.test(a) && BAD.test(a)) return {ok:true};            // 단열이 잘 안 되어서
+  if(!HEAT.test(a)) return {ok:false};
+  return {ok: LOSE.test(a) || (OUT.test(a) && MOVE.test(a))};
+}
+function grade4(){
+  const a=parseFloat($("#a4").value);
+  return {ok: isFinite(a) && Math.abs(a-eqTemp())<=1.5};
 }
 function feedback(sel,res,key,extra){
   const box=$(sel), qbox=box.closest(".q");

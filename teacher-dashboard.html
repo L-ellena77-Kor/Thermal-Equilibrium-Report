@@ -75,6 +75,13 @@ svg{display:block;width:100%;height:auto}
 .ansbox .k{font-size:12px;color:var(--muted);font-weight:700;margin-bottom:2px}
 .ansbox .v{font-size:14px}
 tr.hotrow th.rowh{color:var(--hot)} tr.coldrow th.rowh{color:var(--cold)}
+.stepnav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;
+  border-bottom:1px solid var(--line);padding-bottom:12px}
+.stepbtn{background:transparent;color:#C7BCDF;border:1.5px solid var(--line);
+  border-radius:999px;padding:7px 16px;font-size:14px;font-weight:700}
+.stepbtn.on{background:var(--gold);color:#1A1226;border-color:var(--gold)}
+.model{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);
+  font-size:13px;color:#8FEBC8;font-weight:600}
 .try{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;
   font-size:11.5px;font-weight:800;letter-spacing:0}
 .try.t1{background:#16352E;color:var(--ok);border:1px solid #2E6A57}
@@ -246,47 +253,155 @@ function renderClass(){
 }
 
 /* ---------- 상세 ---------- */
+/* ===== 모둠 상세 · 수업 되짚어보기 ===== */
+let RV=null;
+
 function openDetail(c,g){
   const r=LATEST[c+"-"+g]; if(!r) return;
   curKey=c+"-"+g; renderClass();
-  const nm=k=>`${r.roles[k][0]}번 ${r.roles[k][1]}`;
-  let tbl=`<table style="min-width:640px"><thead><tr><th class="rowh">시간</th>`;
-  for(let t=0;t<10;t++) tbl+=`<th>${t}분</th>`;
-  tbl+=`</tr></thead><tbody><tr class="hotrow"><th class="rowh">뜨거운 물</th>`;
-  for(let t=0;t<10;t++) tbl+=`<td>${fmt(r.hot[t])}</td>`;
-  tbl+=`</tr><tr class="coldrow"><th class="rowh">찬물</th>`;
-  for(let t=0;t<10;t++) tbl+=`<td>${fmt(r.cold[t])}</td>`;
-  tbl+=`</tr><tr><th class="rowh">온도 차</th>`;
-  for(let t=0;t<10;t++) tbl+=`<td>${(r.hot[t]!=null&&r.cold[t]!=null)?Math.abs(r.hot[t]-r.cold[t]).toFixed(1):"-"}</td>`;
-  tbl+=`</tr></tbody></table>`;
-
+  RV={r:r, cls:c, grp:g, step:1, plot:{hot:{},cold:{}}, kind:"hot",
+      curve:{hot:false,cold:false}, hide:false, showAns:false};
   $("#s-detail").style.display="";
+  renderDetail();
+  $("#s-detail").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+const STEPNM=["실험 표","점 찍기","완성 그래프","문제와 답"];
+
+function renderDetail(){
+  const r=RV.r, nm=k=>`${r.roles[k][0]}번 ${r.roles[k][1]}`;
+  let nav="";
+  for(let i=1;i<=4;i++)
+    nav+=`<button class="stepbtn ${RV.step===i?"on":""}" data-s="${i}">${i}. ${STEPNM[i-1]}</button>`;
+
   $("#s-detail").innerHTML=`
-    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:14px">
-      <h2 style="margin:0">${c}반 ${g}모둠</h2>
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px">
+      <h2 style="margin:0">${RV.cls}반 ${RV.grp}모둠</h2>
       <span class="small">제출 ${r.ts}</span>
-      <span class="right" style="margin-left:auto"><button class="ghost small" id="btnClose">닫기</button></span>
+      <span style="margin-left:auto"><button class="ghost small" id="btnClose">닫기</button></span>
     </div>
     <div class="small" style="margin-bottom:14px">
       1분이 ${nm("min")} · 뜨거왕 ${nm("hot")} · 차가왕 ${nm("cold")} · 기록왕 ${nm("rec")}
     </div>
-    <div class="detail">
-      <div>
-        <div class="plot">${chart(r)}</div>
-        <div style="overflow-x:auto;margin-top:12px">${tbl}</div>
-      </div>
-      <div>
-        <div class="ansbox"><div class="k">1번 · 뜨거운 물의 온도 변화 ${tryTag(r,0)}</div><div class="v">${esc(r.a1h)}</div></div>
-        <div class="ansbox"><div class="k">1번 · 찬물의 온도 변화</div><div class="v">${esc(r.a1c)}</div></div>
-        <div class="ansbox"><div class="k">2번 · 온도가 같아진 상태 ${tryTag(r,1)}</div><div class="v">${esc(r.a2)}</div></div>
-        <div class="ansbox"><div class="k">3번 · 오차 원인 ${tryTag(r,2)}</div><div class="v">${esc(r.a3)}</div></div>
-        <div class="ansbox"><div class="k">4번 · 열평형 온도 ${tryTag(r,3)}</div>
-          <div class="v">${esc(r.a4)} °C <span class="small">(두 온도가 가장 가까워진 때의 평균 ${r.eq!=null?r.eq.toFixed(1):"-"} °C)</span></div></div>
-      </div>
-    </div>`;
-  $("#btnClose").onclick=()=>{ $("#s-detail").style.display="none"; curKey=null; renderClass(); };
-  $("#s-detail").scrollIntoView({behavior:"smooth",block:"start"});
+    <div class="stepnav">${nav}</div>
+    <div id="stepBody"></div>`;
+
+  $("#btnClose").onclick=()=>{ $("#s-detail").style.display="none"; curKey=null; RV=null; renderClass(); };
+  document.querySelectorAll(".stepbtn").forEach(b=>{
+    b.onclick=()=>{ RV.step=+b.dataset.s; renderDetail(); };
+  });
+  if(RV.step===1) stepTable();
+  else if(RV.step===2) stepPlot();
+  else if(RV.step===3) stepCurve();
+  else stepAnswers();
 }
+
+/* 1단계 · 표 */
+function stepTable(){
+  const r=RV.r;
+  $("#stepBody").innerHTML=`
+    <p class="lead">아이들에게 표를 먼저 읽히세요. ‘값 가리기’로 숫자를 감추고 질문할 수 있습니다.</p>
+    <div class="row" style="margin:0 0 14px">
+      <button class="ghost small" id="btnHide">${RV.hide?"값 보이기":"값 가리기"}</button>
+    </div>
+    <div style="overflow-x:auto">${tempTable(r,RV.hide)}</div>`;
+  $("#btnHide").onclick=()=>{ RV.hide=!RV.hide; stepTable(); };
+}
+function tempTable(r,hide){
+  const h=v=>hide?"?":fmt(v);
+  let t=`<table style="min-width:640px"><thead><tr><th class="rowh">시간</th>`;
+  for(let i=0;i<10;i++) t+=`<th>${i}분</th>`;
+  t+=`</tr></thead><tbody><tr class="hotrow"><th class="rowh">뜨거운 물</th>`;
+  for(let i=0;i<10;i++) t+=`<td>${h(r.hot[i])}</td>`;
+  t+=`</tr><tr class="coldrow"><th class="rowh">찬물</th>`;
+  for(let i=0;i<10;i++) t+=`<td>${h(r.cold[i])}</td>`;
+  t+=`</tr><tr><th class="rowh">온도 차</th>`;
+  for(let i=0;i<10;i++) t+=`<td>${hide?"?":((r.hot[i]!=null&&r.cold[i]!=null)?Math.abs(r.hot[i]-r.cold[i]).toFixed(1):"-")}</td>`;
+  return t+`</tr></tbody></table>`;
+}
+
+/* 2단계 · 직접 점 찍어 보기 */
+function stepPlot(){
+  const r=RV.r, k=RV.kind;
+  $("#stepBody").innerHTML=`
+    <p class="lead">아이들이 했던 것처럼 직접 점을 찍어 보세요. 표의 값 가까이(2°C 이내) 누르면 제자리에 붙습니다.</p>
+    <div class="row" style="margin:0 0 12px">
+      <button class="${k==="hot"?"":"ghost"} small" id="bHot">뜨거운 물</button>
+      <button class="${k==="cold"?"":"ghost"} small" id="bCold">찬물</button>
+      <span style="width:14px"></span>
+      <button class="ghost small" id="bFill">학생이 적은 값대로 찍기</button>
+      <button class="ghost small" id="bCurve">곡선 그리기</button>
+      <button class="ghost small" id="bClear">지우기</button>
+      <span class="small" id="pCnt"></span>
+    </div>
+    <div class="plot" id="rvPlot"></div>
+    <div style="overflow-x:auto;margin-top:12px">${tempTable(r,false)}</div>`;
+  $("#bHot").onclick=()=>{RV.kind="hot"; stepPlot();};
+  $("#bCold").onclick=()=>{RV.kind="cold"; stepPlot();};
+  $("#bFill").onclick=()=>{ for(let t=0;t<10;t++) if(r[RV.kind][t]!=null) RV.plot[RV.kind][t]=r[RV.kind][t]; drawRv(); };
+  $("#bCurve").onclick=()=>{ RV.curve[RV.kind]=true; drawRv(); };
+  $("#bClear").onclick=()=>{ RV.plot[RV.kind]={}; RV.curve[RV.kind]=false; drawRv(); };
+  drawRv();
+}
+function drawRv(){
+  const r=RV.r, g=geo(r);
+  if(!g){ $("#rvPlot").innerHTML=`<div class="small" style="padding:20px">온도 자료가 없습니다.</div>`; return; }
+  let s=axesSvg(g);
+  ["hot","cold"].forEach(k=>{
+    const col=k==="hot"?"#FF7A45":"#59A8FF", pts=[];
+    for(let t=0;t<10;t++) if(RV.plot[k][t]!=null) pts.push({t:t,x:g.X(t),y:g.Y(RV.plot[k][t]),v:RV.plot[k][t]});
+    if(RV.curve[k]&&pts.length>1) s+=`<path class="${k==="hot"?"ch":"cc"}" d="${smooth(pts)}"/>`;
+    pts.forEach(p=>{
+      const ok = r[k][p.t]!=null && Math.abs(p.v-r[k][p.t])<0.001;
+      s+=`<circle cx="${p.x}" cy="${p.y}" r="5" fill="${ok?col:"#FF6B87"}" stroke="#1E1731" stroke-width="2"/>`;
+      s+=`<text class="axlabel" x="${p.x+7}" y="${p.y-7}" fill="${ok?col:"#FF6B87"}">${p.v.toFixed(1)}</text>`;
+    });
+  });
+  s+=`<rect id="rvHit" x="${g.PL}" y="${g.PT}" width="${g.PW}" height="${g.PH}" fill="transparent" style="cursor:crosshair"/></svg>`;
+  $("#rvPlot").innerHTML=s;
+  const n=Object.keys(RV.plot[RV.kind]).length;
+  const c=$("#pCnt"); if(c) c.textContent=`${RV.kind==="hot"?"뜨거운 물":"찬물"} ${n} / 10개`;
+  const svg=$("#rvPlot svg");
+  $("#rvHit").addEventListener("pointerdown",e=>{
+    const b=svg.getBoundingClientRect();
+    const px=(e.clientX-b.left)/b.width*g.W, py=(e.clientY-b.top)/b.height*g.H;
+    let t=Math.round(g.invX(px)); t=Math.max(0,Math.min(9,t));
+    const raw=g.invY(py), w=r[RV.kind][t];
+    RV.plot[RV.kind][t] = (w!=null && Math.abs(raw-w)<=2) ? w : Math.round(raw*2)/2;
+    drawRv();
+  });
+}
+
+/* 3단계 · 완성 그래프 */
+function stepCurve(){
+  const r=RV.r;
+  $("#stepBody").innerHTML=`
+    <p class="lead">두 곡선이 가까워지다가 만나는 지점이 열평형입니다. 계산값은 ${r.eq!=null?r.eq.toFixed(1):"-"} °C입니다.</p>
+    <div class="plot">${chart(r)}</div>
+    <div style="overflow-x:auto;margin-top:12px">${tempTable(r,false)}</div>`;
+}
+
+/* 4단계 · 문제와 답 */
+const MODEL=["뜨거운 물: 낮아지다가 일정해짐 / 찬물: 높아지다가 일정해짐",
+  "열평형 (또는 열평형 상태)",
+  "열량계 밖(과학실 공기 중)으로 열이 빠져나갔기 때문",
+  "두 온도가 같아진 때의 온도"];
+function stepAnswers(){
+  const r=RV.r, sh=RV.showAns;
+  const box=(t,i,body)=>`<div class="ansbox"><div class="k">${t} ${tryTag(r,i)}</div><div class="v">${body}</div>
+      ${sh?`<div class="model">모범답안 · ${MODEL[i]}</div>`:""}</div>`;
+  $("#stepBody").innerHTML=`
+    <div class="row" style="margin:0 0 14px">
+      <button class="ghost small" id="bAns">${sh?"모범답안 숨기기":"모범답안 보기"}</button>
+      <span class="small">배지는 몇 번 만에 맞혔는지를 뜻합니다.</span>
+    </div>
+    ${box("1번 · 뜨거운 물의 온도 변화",0,esc(r.a1h)+"<br>"+esc(r.a1c))}
+    ${box("2번 · 온도가 같아진 상태",1,esc(r.a2))}
+    ${box("3번 · 오차 원인",2,esc(r.a3))}
+    ${box("4번 · 열평형 온도",3,esc(r.a4)+" °C <span class='small'>(계산값 "+(r.eq!=null?r.eq.toFixed(1):"-")+" °C)</span>")}`;
+  $("#bAns").onclick=()=>{ RV.showAns=!RV.showAns; stepAnswers(); };
+}
+
 const fmt=v=>v==null?"-":v.toFixed(1);
 function tryTag(r,i){
   const n=r.tries&&r.tries[i];
@@ -297,32 +412,43 @@ function tryTag(r,i){
 }
 const esc=s=>String(s==null?"":s).replace(/[<>&]/g,m=>({"<":"&lt;",">":"&gt;","&":"&amp;"}[m]));
 
-function chart(r){
+/* ===== 그래프 공통 ===== */
+function geo(r){
   const W=560,H=340,PL=48,PR=16,PT=16,PB=42,PW=W-PL-PR,PH=H-PT-PB;
   const vals=r.hot.concat(r.cold).filter(v=>v!=null);
-  if(!vals.length) return `<div class="small" style="padding:20px">온도 자료가 없습니다.</div>`;
+  if(!vals.length) return null;
   let lo=Math.min.apply(null,vals), hi=Math.max.apply(null,vals);
   const pad=Math.max(2,(hi-lo)*0.15); lo-=pad; hi+=pad;
   const span=hi-lo, step= span<=16?2 : span<=40?5 : 10;
   const yMin=Math.max(0,Math.floor(lo/step)*step), yMax=Math.min(105,Math.ceil(hi/step)*step);
-  const X=t=>PL+(t/9.5)*PW, Y=v=>PT+(yMax-v)/(yMax-yMin)*PH;
-  let s=`<svg viewBox="0 0 ${W} ${H}">`;
-  for(let t=0;t<10;t++) s+=`<line class="gridline" x1="${X(t)}" y1="${PT}" x2="${X(t)}" y2="${PT+PH}"/>`;
-  for(let v=yMin;v<=yMax+.001;v+=step) s+=`<line class="gridline" x1="${PL}" y1="${Y(v)}" x2="${PL+PW}" y2="${Y(v)}"/>`;
-  s+=`<line class="axis" x1="${PL}" y1="${PT}" x2="${PL}" y2="${PT+PH}"/>`;
-  s+=`<line class="axis" x1="${PL}" y1="${PT+PH}" x2="${PL+PW}" y2="${PT+PH}"/>`;
-  for(let t=0;t<10;t++) s+=`<text class="axlabel" x="${X(t)}" y="${PT+PH+16}" text-anchor="middle">${t}</text>`;
-  for(let v=yMin;v<=yMax+.001;v+=step) s+=`<text class="axlabel" x="${PL-8}" y="${Y(v)+4}" text-anchor="end">${v}</text>`;
-  s+=`<text class="axtitle" x="${PL+PW/2}" y="${PT+PH+36}" text-anchor="middle">시간 (분)</text>`;
-  s+=`<text class="axtitle" x="14" y="${PT+PH/2}" text-anchor="middle" transform="rotate(-90 14 ${PT+PH/2})">온도 (°C)</text>`;
+  return {W,H,PL,PR,PT,PB,PW,PH,step,yMin,yMax,
+    X:t=>PL+(t/9.5)*PW, Y:v=>PT+(yMax-v)/(yMax-yMin)*PH,
+    invX:px=>(px-PL)/PW*9.5, invY:py=>yMax-(py-PT)/PH*(yMax-yMin)};
+}
+function axesSvg(g){
+  let s=`<svg viewBox="0 0 ${g.W} ${g.H}">`;
+  for(let t=0;t<10;t++) s+=`<line class="gridline" x1="${g.X(t)}" y1="${g.PT}" x2="${g.X(t)}" y2="${g.PT+g.PH}"/>`;
+  for(let v=g.yMin;v<=g.yMax+.001;v+=g.step) s+=`<line class="gridline" x1="${g.PL}" y1="${g.Y(v)}" x2="${g.PL+g.PW}" y2="${g.Y(v)}"/>`;
+  s+=`<line class="axis" x1="${g.PL}" y1="${g.PT}" x2="${g.PL}" y2="${g.PT+g.PH}"/>`;
+  s+=`<line class="axis" x1="${g.PL}" y1="${g.PT+g.PH}" x2="${g.PL+g.PW}" y2="${g.PT+g.PH}"/>`;
+  for(let t=0;t<10;t++) s+=`<text class="axlabel" x="${g.X(t)}" y="${g.PT+g.PH+16}" text-anchor="middle">${t}</text>`;
+  for(let v=g.yMin;v<=g.yMax+.001;v+=g.step) s+=`<text class="axlabel" x="${g.PL-8}" y="${g.Y(v)+4}" text-anchor="end">${v}</text>`;
+  s+=`<text class="axtitle" x="${g.PL+g.PW/2}" y="${g.PT+g.PH+36}" text-anchor="middle">시간 (분)</text>`;
+  s+=`<text class="axtitle" x="14" y="${g.PT+g.PH/2}" text-anchor="middle" transform="rotate(-90 14 ${g.PT+g.PH/2})">온도 (°C)</text>`;
+  return s;
+}
+function chart(r){
+  const g=geo(r);
+  if(!g) return `<div class="small" style="padding:20px">온도 자료가 없습니다.</div>`;
+  let s=axesSvg(g);
   ["hot","cold"].forEach(k=>{
     const arr=r[k], pts=[];
-    for(let t=0;t<10;t++) if(arr[t]!=null) pts.push({x:X(t),y:Y(arr[t])});
+    for(let t=0;t<10;t++) if(arr[t]!=null) pts.push({x:g.X(t),y:g.Y(arr[t])});
     if(pts.length>1) s+=`<path class="${k==="hot"?"ch":"cc"}" d="${smooth(pts)}"/>`;
     pts.forEach(p=>{ s+=`<circle cx="${p.x}" cy="${p.y}" r="3.6" fill="${k==="hot"?"#FF7A45":"#59A8FF"}"/>`; });
   });
-  s+=`<circle cx="${PL+PW-96}" cy="${PT+12}" r="4" fill="#FF7A45"/><text class="axlabel" x="${PL+PW-86}" y="${PT+16}">뜨거운 물</text>`;
-  s+=`<circle cx="${PL+PW-96}" cy="${PT+30}" r="4" fill="#59A8FF"/><text class="axlabel" x="${PL+PW-86}" y="${PT+34}">찬물</text>`;
+  s+=`<circle cx="${g.PL+g.PW-96}" cy="${g.PT+12}" r="4" fill="#FF7A45"/><text class="axlabel" x="${g.PL+g.PW-86}" y="${g.PT+16}">뜨거운 물</text>`;
+  s+=`<circle cx="${g.PL+g.PW-96}" cy="${g.PT+30}" r="4" fill="#59A8FF"/><text class="axlabel" x="${g.PL+g.PW-86}" y="${g.PT+34}">찬물</text>`;
   return s+`</svg>`;
 }
 function smooth(p){
