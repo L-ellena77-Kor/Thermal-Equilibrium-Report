@@ -356,6 +356,7 @@ svg.plot{display:block;width:100%;height:auto;touch-action:none}
         <button id="btnCheck">점 확인하기</button>
         <button class="ghost small" id="btnClear">점 지우기</button>
         <button class="ghost small" id="btnAuto" style="display:none">자동으로 찍기</button>
+        <button id="btnCard" style="display:none">실험왕 카드 받기</button>
       </div>
     </div>
   </div>
@@ -517,7 +518,8 @@ const S = {
   temps:Array.from({length:NT},(_,i)=>({t:i,hot:null,cold:null})),
   plot:{hot:{},cold:{}}, locked:{hot:false,cold:false},
   phase:"hot", tags:{hot:false,cold:false},
-  ans:{}, tries:{q1:0,q2:0,q3:0,q4:0}
+  ans:{}, tries:{q1:0,q2:0,q3:0,q4:0},
+  free:false, scaled:false, tempKey:"", quizPassed:false
 };
 const $ = s=>document.querySelector(s);
 const el = (t,c)=>{const n=document.createElement(t); if(c)n.className=c; return n;};
@@ -606,6 +608,9 @@ function drawRail(id){
     const sp=el("span"); sp.textContent=s[1];
     if(i===cur) sp.className="on"; else if(i<cur) sp.className="done";
     if(PREVIEW){ sp.className+=" click"; sp.onclick=()=>gotoStep(s[0]); }
+    else if(S.free && i>=1 && i<=4 && i!==cur){
+      sp.className+=" click"; sp.onclick=()=>studentGoto(s[0]);
+    }
     rail.appendChild(sp);
   });
   if(PREVIEW){
@@ -617,6 +622,43 @@ function drawRail(id){
       box.appendChild(b);
     });
   }
+}
+
+/* 학생용 자유 이동 — 역할까지 끝낸 뒤 온도 기록·그래프·문제 사이를 오갑니다 */
+function readTemps(){
+  const bad=[]; let key="";
+  S.temps.forEach(r=>{
+    const h=parseFloat($("#h-"+r.t).value), c=parseFloat($("#c-"+r.t).value);
+    r.hot=isFinite(h)?d1(h):null; r.cold=isFinite(c)?d1(c):null;
+    if(r.hot===null||r.cold===null) bad.push(r.t+"분");
+    else if(r.hot<0||r.hot>100||r.cold<0||r.cold>100) bad.push(r.t+"분(0~100)");
+    key+=r.hot+","+r.cold+";";
+  });
+  const changed = S.tempKey!=="" && S.tempKey!==key;
+  if(!bad.length) S.tempKey=key;
+  return {bad:bad, changed:changed};
+}
+function resetGraph(){
+  S.plot={hot:{},cold:{}}; S.locked={hot:false,cold:false}; S.tags={hot:false,cold:false};  document.querySelectorAll(".tag.placed").forEach(n=>n.remove());
+  document.querySelectorAll("#tray .tag").forEach(t=>t.classList.remove("used"));
+  $("#trayBox").style.display="none";
+  setupScale(); startPhase("hot");
+}
+function studentGoto(id){
+  if(id==="s-roles"||id==="s-record"){ show(id); return; }
+  const r=readTemps(), m=$("#recMsg");
+  if(r.bad.length){
+    m.textContent=`온도표를 먼저 채워야 합니다 — ${r.bad.join(", ")}`;
+    m.classList.add("on"); show("s-record"); shake(m); return;
+  }
+  m.classList.remove("on");
+  $("#qMsg").classList.remove("on");
+  if(r.changed){ resetGraph(); }
+  else if(!S.scaled){ setupScale(); startPhase("hot"); }
+  homeGraph();
+  updateCardBtn();
+  if(id==="s-graph"){ show(id); return; }
+  if(id==="s-quiz"){ prepQuiz(); show(id); return; }
 }
 
 /* 미리보기: 아무 단계로나 건너뛰기 */
@@ -702,7 +744,9 @@ $("#btnRoles").onclick=()=>{
   });
   const m=$("#rolesMsg");
   if(miss.length){ m.textContent=`${miss.join(", ")}의 학번과 이름이 비어 있습니다.`; m.classList.add("on"); shake(m); return; }
-  m.classList.remove("on"); buildRecord(); show("s-record");
+  m.classList.remove("on"); S.free=true; buildRecord(); show("s-record");
+  $("#recMsg").className="msg ok on";
+  $("#recMsg").textContent="이제부터는 위쪽 차례표(온도 기록·그래프·문제)를 눌러 자유롭게 오갈 수 있어요.";
 };
 
 /* 3. 온도 기록 (가로 표) */
@@ -726,15 +770,16 @@ function buildRecord(){
 const d1 = v => Math.round(v*10)/10;
 $("#btnBackRoles").onclick=()=>show("s-roles");
 $("#btnRecord").onclick=()=>{
-  const bad=[], m=$("#recMsg");
-  S.temps.forEach(r=>{
-    const h=parseFloat($("#h-"+r.t).value), c=parseFloat($("#c-"+r.t).value);
-    r.hot=isFinite(h)?d1(h):null; r.cold=isFinite(c)?d1(c):null;
-    if(r.hot===null||r.cold===null) bad.push(r.t+"분");
-    else if(r.hot<0||r.hot>100||r.cold<0||r.cold>100) bad.push(r.t+"분(0~100)");
-  });
-  if(bad.length){ m.textContent=`아직 비었거나 범위를 벗어난 칸이 있습니다 — ${bad.join(", ")}`; m.classList.add("on"); shake(m); return; }
-  m.classList.remove("on"); setupScale(); startPhase("hot"); show("s-graph");
+  const r=readTemps(), m=$("#recMsg");
+  if(r.bad.length){
+    m.textContent=`아직 비었거나 범위를 벗어난 칸이 있습니다 — ${r.bad.join(", ")}`;
+    m.classList.add("on"); shake(m); return;
+  }
+  m.classList.remove("on");
+  homeGraph();
+  if(r.changed) resetGraph();
+  else if(!S.scaled){ setupScale(); startPhase("hot"); }
+  show("s-graph");
 };
 
 /* 4. 그래프 */
@@ -752,6 +797,7 @@ function setupScale(){
   const span=hi-lo; yStep = span<=16?2 : span<=40?5 : 10;
   yMin=Math.max(0,Math.floor(lo/yStep)*yStep);
   yMax=Math.min(105,Math.ceil(hi/yStep)*yStep);
+  S.scaled=true;
   drawAxes();
 }
 const X=t=>PL+((t-DX0)/(DX1-DX0))*PW;
@@ -865,6 +911,7 @@ function startPhase(kind){
   $("#stepText").textContent="표를 보고 점을 찍으세요. 가까이 찍으면 정확한 자리에 붙습니다.";
   $("#btnCheck").style.display=""; $("#btnClear").style.display="";
   if(PREVIEW) $("#btnAuto").style.display="";
+  updateCardBtn();
   $("#gOk").classList.remove("on"); $("#gWarn").classList.remove("on");
   renderPts();
 }
@@ -910,7 +957,9 @@ $("#btnCheck").onclick=()=>{
 function startLabelPhase(){
   S.phase="label";
   $("#gTitle").textContent="곡선에 이름표를 붙이세요";
-  $("#gLead").textContent="이름표 두 개를 끌어서 알맞은 곡선 위에 놓으면 문제로 넘어갑니다.";
+  $("#gLead").textContent = S.quizPassed
+    ? "이름표 두 개를 알맞은 곡선에 붙이면 실험왕 카드를 받습니다."
+    : "이름표 두 개를 끌어서 알맞은 곡선 위에 놓으면 문제로 넘어갑니다.";
   $("#stepTitle").textContent="3단계 · 이름표";
   $("#stepText").textContent="뜨거운 물 곡선과 찬물 곡선을 구별해 보세요.";
   $("#btnCheck").style.display="none"; $("#btnClear").style.display="none";
@@ -967,11 +1016,16 @@ window.addEventListener("pointerup",e=>{
     ok.classList.remove("on"); warn.classList.add("on"); shake(warn); return;
   }
   warn.classList.remove("on"); placeTag(kind,mine.p); src.classList.add("used"); S.tags[kind]=true;
+  updateCardBtn();
   if(S.tags.hot&&S.tags.cold){
     ok.classList.add("on"); ok.textContent="이름표를 모두 붙였습니다. 이제 문제를 풀어 봅시다.";
-    setTimeout(()=>{prepQuiz(); show("s-quiz");},900);
+    setTimeout(()=>{
+      if(S.quizPassed){ finish(); return; }
+      prepQuiz(); show("s-quiz");
+    },900);
   }
 });
+$("#btnCard").onclick=()=>{ if(graphDone()&&S.quizPassed) finish(); };
 function placeTag(kind,anchor){
   const wrap=$("#plotwrap"), tag=el("span","tag placed "+(kind==="hot"?"t-hot":"t-cold"));
   tag.innerHTML=`<span class="dot"></span>${kind==="hot"?"뜨거운 물":"찬물"}`;
@@ -1090,10 +1144,25 @@ $("#btnQuiz").onclick=()=>{
     shake(qm); return;
   }
   qm.className="msg ok on"; qm.textContent="네 문제 모두 정답입니다.";
+  S.quizPassed=true;
   S.ans={h:$("#a1h").value.trim(), c:$("#a1c").value.trim(),
          q2:$("#a2").value.trim(), q3:$("#a3").value.trim(), q4:$("#a4").value.trim()};
+  if(!PREVIEW && !graphDone()){
+    qm.className="msg warn on";
+    qm.textContent="문제는 다 맞혔습니다. 그런데 그래프가 아직 완성되지 않았어요. 그래프까지 마쳐야 카드를 받을 수 있습니다.";
+    shake(qm);
+    setTimeout(()=>studentGoto("s-graph"),1400);
+    return;
+  }
   setTimeout(finish,700);
 };
+function graphDone(){
+  return S.locked.hot && S.locked.cold && S.tags.hot && S.tags.cold;
+}
+function updateCardBtn(){
+  const b=$("#btnCard"); if(!b) return;
+  b.style.display = (graphDone() && S.quizPassed) ? "" : "none";
+}
 
 /* 카드 반짝임 */
 function sparkle(card){
